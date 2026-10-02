@@ -129,7 +129,10 @@ document.getElementById('adjust-form').onsubmit = async e => {
   } catch (err) { error.textContent = err.message; error.classList.remove('hidden'); }
 };
 
-document.getElementById('reset-demo').onclick = () =>
-  toast('Ahora los datos viven en MySQL. El reinicio queda pendiente.');
+   document.getElementById('reset-demo').onclick = () =>
+     openConfirm('Restaurar demostración',
+       '<p>Se borrarán los pedidos y movimientos actuales, y se restaurarán los pedidos de ejemplo y el stock inicial.</p>',
+       () => act(() => api('/api/reset', { method: 'POST' }), 'Datos de demostración restaurados.'),
+       'Restaurar datos');
 
 loadAll().catch(() => toast('No se pudo conectar con el servidor.'));

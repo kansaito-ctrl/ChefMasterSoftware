@@ -1,4 +1,5 @@
 require('dotenv').config();
+   const fs = require('fs');
 const express = require('express');
 const mysql = require('mysql2/promise');
 const path = require('path');
@@ -135,5 +136,15 @@ app.post('/api/inventory/:id/movement', wrap(async (req, res) => {
     res.json({ ok: true, quantity: after });
   } catch (e) { await conn.rollback(); throw e; } finally { conn.release(); }
 }));
-
+// Reinicia la demo: ejecuta seed_demo.sql
+app.post('/api/reset', wrap(async (_, res) => {
+  const sql = fs.readFileSync(path.join(__dirname, 'seed_demo.sql'), 'utf8');
+  const conn = await mysql.createConnection({
+    host: process.env.DB_HOST, user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD, database: process.env.DB_NAME,
+    multipleStatements: true
+  });
+  try { await conn.query(sql); } finally { await conn.end(); }
+  res.json({ ok: true });
+}));
 app.listen(process.env.PORT || 3000, () => console.log(`ChefMaster en http://localhost:${process.env.PORT || 3000}`));
