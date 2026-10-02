@@ -93,4 +93,4 @@ Tablas: `ingredients`, `recipes`, `recipe_ingredients`, `orders`, `order_items`,
 
 ## Autor
 
-Gerónimo Lugo, estudiante de Ingeniería en Software, Universidad ICEL-UI.
+Lugo Flores Jose Geronimo, Emiliano Resendiz Gonzalez, Miguel Reyes Montiel, Humberto Quintana Banda, Jose Ramon Garcia Alvarez ,Lizbeth Santiago Martinez estudiantes de Ingeniería en Software y Ciber Seguridad en Universidad ICEL-UI. Campus Ermita
