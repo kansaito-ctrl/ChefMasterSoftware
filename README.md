@@ -27,29 +27,33 @@ Sistema web para operaciones de una cocina turca: pedidos, inventario de ingredi
 ## Cómo correrlo
 
 1. Clona el repo e instala dependencias:
-   ```
+```
    git clone https://github.com/kansaito-ctrl/ChefMasterSoftware.git
    cd ChefMasterSoftware
    npm install
-   ```
+```
 2. Crea tu archivo de entorno y pon tu contraseña de MySQL:
-   ```
+```
    cp .env.example .env
-   ```
+```
    (En PowerShell: `Copy-Item .env.example .env`)
 3. Carga la base de datos. Entra a MySQL y ejecuta el esquema:
-   ```
+```
    mysql -u root -p --default-character-set=utf8mb4
-   ```
-   ```
+```
+```
    source schema.sql;
+```
+4. (Opcional) Carga pedidos de ejemplo para la demo:
+```
+   source seed_demo.sql;
    exit
-   ```
-4. Arranca el servidor:
-   ```
+```
+5. Arranca el servidor:
+```
    npm run dev
-   ```
-5. Abre http://localhost:3000
+```
+6. Abre http://localhost:3000
 
 > El archivo `.env` **no** se sube a Git: contiene credenciales.
 
@@ -62,6 +66,7 @@ chefmaster/
 │   └── api.js       # conecta la interfaz con la API
 ├── server.js        # API Express + MySQL
 ├── schema.sql       # tablas y datos iniciales
+├── seed_demo.sql    # pedidos de ejemplo para la demo
 ├── .env.example     # plantilla de variables de entorno
 └── package.json
 ```
