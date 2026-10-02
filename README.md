@@ -28,6 +28,7 @@ Sistema web para operaciones de una cocina turca: pedidos, inventario de ingredi
 
 1. Clona el repo e instala dependencias:
 ```
+   Abrir Windows , Buscar PowerShell y copia y pega lo siguiente:
    git clone https://github.com/kansaito-ctrl/ChefMasterSoftware.git
    cd ChefMasterSoftware
    npm install
