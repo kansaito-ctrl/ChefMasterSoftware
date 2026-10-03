@@ -2,11 +2,16 @@
 
 Sistema web para operaciones de una cocina turca: pedidos, inventario de ingredientes, reportes y configuración. Los datos se guardan en **MySQL** a través de una API en **Node.js + Express**.
 
+**Demo en línea:** https://chefmastersoftware.onrender.com
+
+> La demo corre en un plan gratuito: si nadie la visita por un rato se "duerme", y la primera carga puede tardar hasta 1 minuto.
+
 ## Tecnologías
 
-- **Front:** HTML, CSS (Tailwind por CDN) y JavaScript puro
+- **Front:** HTML, CSS (Tailwind por CDN) y JavaScript
 - **Backend:** Node.js + Express
 - **Base de datos:** MySQL (`mysql2`)
+- **Publicación:** Render (servidor) + Aiven (MySQL en la nube)
 
 ## Funciones
 
@@ -17,6 +22,7 @@ Sistema web para operaciones de una cocina turca: pedidos, inventario de ingredi
 - Alertas de bajo stock y agotados
 - Pedidos entregados: se envían a "eliminados", se pueden restaurar o borrar definitivamente
 - Registro de movimientos de inventario
+- Botón **Restaurar datos** (protegido con clave) que reinicia la demo
 
 ## Requisitos
 
@@ -24,39 +30,55 @@ Sistema web para operaciones de una cocina turca: pedidos, inventario de ingredi
 - [MySQL Community Server](https://dev.mysql.com/downloads/)
 - [Git](https://git-scm.com)
 
-## Cómo correrlo
+## Cómo correrlo en tu computadora
 
 1. Clona el repo e instala dependencias:
-```
+   ```
    Abrir Windows , Buscar PowerShell y copia y pega lo siguiente:
    git clone https://github.com/kansaito-ctrl/ChefMasterSoftware.git
    cd ChefMasterSoftware
    npm install
-```
-2. Crea tu archivo de entorno y pon tu contraseña de MySQL:
-```
+   ```
+2. Crea tu archivo de entorno:
+   ```
    cp .env.example .env
-```
-   (En PowerShell: `Copy-Item .env.example .env`)
-3. Carga la base de datos. Entra a MySQL y ejecuta el esquema:
-```
+   ```
+   (En PowerShell: `Copy-Item .env.example .env`) y llena tus datos de MySQL.
+3. Carga la base de datos. Entra a MySQL:
+   ```
    mysql -u root -p --default-character-set=utf8mb4
-```
-```
+   ```
+   y ejecuta:
+   ```
    source schema.sql;
-```
-4. (Opcional) Carga pedidos de ejemplo para la demo:
-```
    source seed_demo.sql;
    exit
-```
-5. Arranca el servidor:
-```
+   ```
+4. Arranca el servidor:
+   ```
    npm run dev
-```
-6. Abre http://localhost:3000
+   ```
+5. Abre http://localhost:3000
 
-> El archivo `.env` **no** se sube a Git: contiene credenciales.
+## Variables de entorno
+
+| Variable | Descripción |
+|----------|-------------|
+| `DB_HOST` | Servidor de MySQL (`localhost` en local) |
+| `DB_PORT` | Puerto de MySQL (3306 por defecto) |
+| `DB_USER` | Usuario de MySQL |
+| `DB_PASSWORD` | Contraseña de MySQL |
+| `DB_NAME` | Nombre de la base de datos (`chefmaster`) |
+| `DB_SSL` | `true` solo si la base en la nube exige conexión segura |
+| `RESET_KEY` | Clave que protege el botón "Restaurar datos" |
+
+> El archivo `.env` **no** se sube a Git: contiene credenciales. Usa `.env.example` como plantilla.
+
+## Publicación en línea
+
+- **Base de datos:** servicio MySQL en Aiven. Se cargan `schema.sql` y `seed_demo.sql` con el cliente `mysql` usando `--ssl-mode=REQUIRED`.
+- **Servidor:** Web Service en Render conectado a este repo, con Build Command `npm install` y Start Command `node server.js`. Las variables de entorno se configuran en el panel de Render.
+- **Actualizaciones:** cada `git push` a `main` vuelve a publicar la app automáticamente.
 
 ## Estructura
 
@@ -67,7 +89,7 @@ chefmaster/
 │   └── api.js       # conecta la interfaz con la API
 ├── server.js        # API Express + MySQL
 ├── schema.sql       # tablas y datos iniciales
-├── seed_demo.sql    # pedidos de ejemplo para la demo
+├── seed_demo.sql    # pedidos de ejemplo (también lo usa "Restaurar datos")
 ├── .env.example     # plantilla de variables de entorno
 └── package.json
 ```
@@ -91,6 +113,11 @@ Tablas: `ingredients`, `recipes`, `recipe_ingredients`, `orders`, `order_items`,
 | PATCH | `/api/orders/:id/restore` | Restaurar pedido eliminado |
 | DELETE | `/api/orders/:id` | Eliminar definitivamente |
 | POST | `/api/inventory/:id/movement` | Entrada o salida manual de stock |
+| POST | `/api/reset` | Reiniciar la demo (requiere `key` en el cuerpo) |
+
+## Limitaciones
+
+No hay inicio de sesión ni roles: la protección de `/api/reset` es solo una clave simple pensada para la demo. Para un uso real habría que agregar usuarios y permisos.
 
 ## Autor
 
