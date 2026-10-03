@@ -139,7 +139,9 @@ app.post('/api/inventory/:id/movement', wrap(async (req, res) => {
   } catch (e) { await conn.rollback(); throw e; } finally { conn.release(); }
 }));
 // Reinicia la demo: ejecuta seed_demo.sql
-app.post('/api/reset', wrap(async (_, res) => {
+app.post('/api/reset', wrap(async (req, res) => {
+    if (!process.env.RESET_KEY || req.body.key !== process.env.RESET_KEY)
+    return res.status(403).json({ error: 'Clave incorrecta' });
   const sql = fs.readFileSync(path.join(__dirname, 'seed_demo.sql'), 'utf8');
   const conn = await mysql.createConnection({
            port: process.env.DB_PORT || 3306,
