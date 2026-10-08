@@ -1,10 +1,11 @@
-
 async function api(url, opt = {}) {
+  const token = sessionStorage.getItem('token');
   const r = await fetch(url, {
     method: opt.method || 'GET',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: 'Bearer ' + token } : {}) },
     body: opt.body ? JSON.stringify(opt.body) : undefined
   });
+  if (r.status === 401) { sessionStorage.removeItem('token'); location.href = '/'; return new Promise(() => {}); }
   const d = await r.json().catch(() => ({}));
   if (!r.ok) throw new Error(d.error || 'Error del servidor');
   return d;

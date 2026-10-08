@@ -3,10 +3,36 @@ require('dotenv').config();
 const express = require('express');
 const mysql = require('mysql2/promise');
 const path = require('path');
+const crypto = require('crypto');
 
 const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
+// ---------- Acceso de administración ----------
+const sign = exp => crypto.createHmac('sha256', process.env.ADMIN_PASSWORD || '-').update(String(exp)).digest('hex');
+const hash = s => crypto.createHash('sha256').update(String(s)).digest();
+
+app.post('/api/login', (req, res) => {
+  const pw = process.env.ADMIN_PASSWORD;
+  if (!pw || !crypto.timingSafeEqual(hash(req.body.password || ''), hash(pw)))
+    return res.status(401).json({ error: 'Contraseña incorrecta' });
+  const exp = Date.now() + 8 * 60 * 60 * 1000;
+  res.json({ token: `${exp}.${sign(exp)}` });
+});
+
+function requireAdmin(req, res, next) {
+  const [exp, sig] = (req.headers.authorization || '').replace('Bearer ', '').split('.');
+  try {
+    if (process.env.ADMIN_PASSWORD && Number(exp) > Date.now() &&
+        crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(sign(exp)))) return next();
+  } catch (e) {}
+  res.status(401).json({ error: 'No autorizado' });
+}
+
+// Públicas: login, menú y crear pedido. Todo lo demás exige ser administrador.
+const PUBLICAS = [['POST', '/login'], ['GET', '/recipes'], ['POST', '/orders']];
+app.use('/api', (req, res, next) =>
+  PUBLICAS.some(([m, p]) => m === req.method && p === req.path) ? next() : requireAdmin(req, res, next));
 
 const pool = mysql.createPool({
      port: process.env.DB_PORT || 3306,

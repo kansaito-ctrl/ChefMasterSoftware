@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#f4eee5">
-    <title>Chefmaster | Acceso</title>
+    <title>Chefmaster | Cliente</title>
     <style>
         :root {
             color-scheme: light;
@@ -156,68 +156,13 @@
 <body>
     <main>
         <p class="brand-mark">Chefmaster</p>
-        <h1>Bienvenido</h1>
-        <p class="intro">Elige el tipo de acceso para continuar.</p>
-
+        <h1>Próximamente</h1>
+        <p class="intro">La página para clientes está en construcción.</p>
         <div class="choices">
-            <button class="client-button" id="client-button" type="button">
-                Entrar como cliente <span class="arrow" aria-hidden="true">&rarr;</span>
-            </button>
-            <button class="admin-button" id="admin-button" type="button" aria-expanded="false" aria-controls="admin-panel">
-                Administración <span class="arrow" aria-hidden="true">&rarr;</span>
+            <button class="admin-button" type="button" onclick="window.location.href='index.html'">
+                Volver al inicio <span class="arrow" aria-hidden="true">&larr;</span>
             </button>
         </div>
-
-        <form id="admin-panel" hidden>
-            <label for="admin-password">Contraseña de administración</label>
-            <input id="admin-password" name="password" type="password" autocomplete="current-password" required>
-            <button class="submit-button" type="submit">Acceder <span class="arrow" aria-hidden="true">&rarr;</span></button>
-            <p id="login-message" role="alert" aria-live="polite"></p>
-        </form>
     </main>
-
-    <script>
-        const CLIENT_URL = "cliente.html";
-        const ADMIN_URL = "administracion.html";
-
-        const adminButton = document.querySelector("#admin-button");
-        const adminPanel = document.querySelector("#admin-panel");
-        const passwordInput = document.querySelector("#admin-password");
-        const loginMessage = document.querySelector("#login-message");
-
-        document.querySelector("#client-button").addEventListener("click", () => {
-            window.location.href = CLIENT_URL;
-        });
-
-        adminButton.addEventListener("click", () => {
-            adminPanel.hidden = !adminPanel.hidden;
-            adminButton.setAttribute("aria-expanded", String(!adminPanel.hidden));
-            loginMessage.textContent = "";
-
-            if (!adminPanel.hidden) passwordInput.focus();
-        });
-
-        // La contraseña se valida en el servidor, nunca en el navegador
-        adminPanel.addEventListener("submit", async (event) => {
-            event.preventDefault();
-            loginMessage.textContent = "";
-
-            try {
-                const r = await fetch("/api/login", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ password: passwordInput.value })
-                });
-                const d = await r.json().catch(() => ({}));
-                if (!r.ok) throw new Error(d.error || "Error del servidor");
-
-                sessionStorage.setItem("token", d.token);
-                window.location.href = ADMIN_URL;
-            } catch (err) {
-                loginMessage.textContent = err.message;
-                passwordInput.select();
-            }
-        });
-    </script>
 </body>
 </html>
