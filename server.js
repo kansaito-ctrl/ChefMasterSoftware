@@ -273,7 +273,8 @@ app.post('/api/inventory/:id/movement', wrap(async (req, res) => {
 app.post('/api/reset', wrap(async (req, res) => {
   if (!process.env.RESET_KEY || req.body.key !== process.env.RESET_KEY)
     return res.status(403).json({ error: 'Clave incorrecta' });
-  const sql = fs.readFileSync(path.join(__dirname, 'seed_demo.sql'), 'utf8');
+     const sql = ['seed_demo.sql', 'seed_stock_menu.sql'].filter(f => fs.existsSync(path.join(__dirname, f)))
+     .map(f => fs.readFileSync(path.join(__dirname, f), 'utf8')).join('\n');
   const conn = await mysql.createConnection({ ...dbConfig, multipleStatements: true });
   try { await conn.query(sql); } finally { await conn.end(); }
   res.json({ ok: true });
