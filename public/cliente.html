@@ -1,168 +1,133 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#f4eee5">
-    <title>Chefmaster | Cliente</title>
-    <style>
-        :root {
-            color-scheme: light;
-            --ink: #211e1a;
-            --muted: #62584c;
-            --paper: #f7e9c7;
-            --accent: #c83b2b;
-            --yellow: #f4c84a;
-            --line: #211e1a;
-            font-family: "Arial Rounded MT Bold", "Trebuchet MS", sans-serif;
-        }
-
-        * { box-sizing: border-box; }
-
-        body {
-            min-height: 100vh;
-            margin: 0;
-            display: grid;
-            place-items: center;
-            padding: 24px;
-            color: var(--ink);
-            background-color: var(--paper);
-            background-image: radial-gradient(#c7a96d 1px, transparent 1px);
-            background-size: 13px 13px;
-        }
-
-        main {
-            width: min(100%, 470px);
-            padding: clamp(28px, 7vw, 54px);
-            background: #fff9e9;
-            border: 4px solid var(--ink);
-            border-radius: 9px 6px 10px 7px;
-            box-shadow: 8px 9px 0 var(--ink);
-            animation: appear 420ms ease-out both;
-        }
-
-        .brand-mark {
-            display: inline-block;
-            margin: 0 0 28px;
-            padding: 8px 14px;
-            border: 3px solid var(--ink);
-            border-radius: 50%;
-            background: var(--accent);
-            box-shadow: 3px 3px 0 var(--ink);
-            color: #fff9e9;
-            font-size: 14px;
-            font-weight: 700;
-            text-transform: uppercase;
-            transform: rotate(-4deg);
-        }
-
-        h1 {
-            margin: 0;
-            font-family: Georgia, "Times New Roman", serif;
-            font-size: clamp(38px, 10vw, 54px);
-            font-weight: 900;
-            line-height: 0.98;
-            text-shadow: 2px 2px 0 var(--yellow);
-        }
-
-        .intro {
-            margin: 14px 0 32px;
-            color: var(--muted);
-            font-weight: 600;
-            line-height: 1.5;
-        }
-
-        .choices { display: grid; gap: 12px; }
-
-        button {
-            width: 100%;
-            min-height: 58px;
-            padding: 12px 16px;
-            border: 3px solid var(--ink);
-            border-radius: 13px 9px 12px 8px;
-            background: transparent;
-            color: var(--ink);
-            font: inherit;
-            font-size: 16px;
-            font-weight: 700;
-            text-align: left;
-            cursor: pointer;
-            box-shadow: 4px 4px 0 var(--ink);
-            transition: background-color 150ms ease, color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
-        }
-
-        button:hover { transform: translateY(-3px) rotate(-1deg); box-shadow: 6px 7px 0 var(--ink); }
-        button:active { transform: translate(3px, 3px); box-shadow: 1px 1px 0 var(--ink); }
-
-        button:focus-visible, input:focus-visible {
-            outline: 3px solid #d67b50;
-            outline-offset: 3px;
-        }
-
-        .client-button { background: var(--accent); color: #fff9e9; }
-        .client-button:hover { background: #a92e22; }
-        .admin-button { background: var(--yellow); }
-        .admin-button:hover { background: #f8d86f; }
-
-        .arrow { float: right; font-size: 20px; line-height: 1; }
-
-        #admin-panel {
-            margin-top: 22px;
-            padding-top: 22px;
-            border-top: 3px dashed var(--line);
-        }
-
-        #admin-panel[hidden] { display: none; }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 14px;
-            font-weight: 700;
-        }
-
-        input {
-            width: 100%;
-            min-height: 48px;
-            margin-bottom: 12px;
-            padding: 10px 12px;
-            border: 3px solid var(--ink);
-            border-radius: 8px 5px 8px 5px;
-            background: #fffdf7;
-            color: var(--ink);
-            font: inherit;
-        }
-
-        .submit-button { background: var(--ink); color: #fff9e9; }
-        .submit-button:hover { background: #423b31; }
-
-        #login-message {
-            min-height: 20px;
-            margin: 10px 0 0;
-            color: #a52d22;
-            font-size: 14px;
-        }
-
-        @keyframes appear {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-            *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chefmaster | Menú</title>
+<style>
+  :root{--ink:#211e1a;--muted:#62584c;--paper:#f7e9c7;--card:#fff9e9;--red:#c83b2b;--yellow:#f4c84a;font-family:"Trebuchet MS","Arial Rounded MT Bold",sans-serif}
+  *{box-sizing:border-box}
+  body{margin:0;color:var(--ink);background:var(--paper);background-image:radial-gradient(#c7a96d 1px,transparent 1px);background-size:13px 13px;padding-bottom:110px}
+  header{padding:22px 18px 8px;max-width:820px;margin:0 auto}
+  .brand{display:inline-block;padding:6px 12px;border:3px solid var(--ink);border-radius:50%;background:var(--red);color:#fff9e9;font-weight:700;font-size:13px;text-transform:uppercase;transform:rotate(-4deg);box-shadow:3px 3px 0 var(--ink)}
+  h1{margin:14px 0 4px;font-family:Georgia,serif;font-size:clamp(34px,9vw,48px);text-shadow:2px 2px 0 var(--yellow)}
+  .sub{margin:0;color:var(--muted);font-weight:600}
+  nav{position:sticky;top:0;z-index:4;background:var(--paper);border-bottom:3px solid var(--ink);padding:10px 18px;overflow-x:auto;white-space:nowrap}
+  nav a{display:inline-block;margin-right:8px;padding:6px 14px;border:3px solid var(--ink);border-radius:999px;background:var(--card);color:var(--ink);font-weight:700;text-decoration:none;font-size:14px}
+  main{max-width:820px;margin:0 auto;padding:0 18px}
+  h2{margin:28px 0 12px;font-family:Georgia,serif;font-size:28px;border-bottom:4px solid var(--ink);padding-bottom:4px}
+  .item{background:var(--card);border:3px solid var(--ink);border-radius:12px;padding:14px;margin-bottom:14px;box-shadow:4px 4px 0 var(--ink);display:grid;grid-template-columns:1fr auto;gap:10px 14px}
+  .name{font-weight:900;font-size:19px}
+  .desc{margin:6px 0 0;color:var(--muted);font-weight:600;line-height:1.4;font-size:15px}
+  .price{font-weight:900;font-size:19px;text-align:right}
+  .qty{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:8px}
+  .qty button{width:40px;height:40px;border:3px solid var(--ink);border-radius:10px;background:var(--yellow);font:inherit;font-size:22px;font-weight:900;cursor:pointer}
+  .qty span{min-width:26px;text-align:center;font-weight:900;font-size:20px}
+  #bar{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:4px solid var(--ink);padding:10px 16px;z-index:6}
+  #bar .in{max-width:820px;margin:0 auto;display:grid;gap:8px}
+  #bar .row{display:flex;gap:8px;align-items:center}
+  input,textarea{width:100%;min-height:44px;padding:8px 10px;border:3px solid var(--ink);border-radius:8px;background:#fffdf7;font:inherit}
+  #send{border:3px solid var(--ink);border-radius:10px;background:var(--red);color:#fff9e9;font:inherit;font-weight:900;padding:0 18px;min-height:46px;cursor:pointer;white-space:nowrap;box-shadow:3px 3px 0 var(--ink)}
+  #send:disabled{opacity:.5}
+  #msg{margin:0;font-weight:700;min-height:18px}
+  .ok{color:#2c6a4f}.bad{color:#a52d22}
+  .back{display:inline-block;margin:6px 0 0;color:var(--ink);font-weight:700}
+</style>
 </head>
 <body>
-    <main>
-        <p class="brand-mark">Chefmaster</p>
-        <h1>Próximamente</h1>
-        <p class="intro">La página para clientes está en construcción.</p>
-        <div class="choices">
-            <button class="admin-button" type="button" onclick="window.location.href='index.html'">
-                Volver al inicio <span class="arrow" aria-hidden="true">&larr;</span>
-            </button>
-        </div>
-    </main>
+<header>
+  <span class="brand">Chefmaster</span>
+  <h1>Nuestro menú</h1>
+  <p class="sub">Elige tus platillos, escribe tu mesa y envía tu pedido a cocina.</p>
+  <a class="back" href="index.html">&larr; Volver al inicio</a>
+</header>
+<nav id="nav"></nav>
+<main id="menu"><p>Cargando menú…</p></main>
+
+<div id="bar">
+  <div class="in">
+    <p id="msg"></p>
+    <div class="row">
+      <input id="mesa" type="text" maxlength="80" placeholder="Tu mesa o nombre" aria-label="Tu mesa o nombre">
+      <button id="send" type="button" disabled>Enviar · $0</button>
+    </div>
+    <input id="notas" type="text" maxlength="300" placeholder="Notas para cocina (opcional)" aria-label="Notas para cocina">
+  </div>
+</div>
+
+<script>
+const ORDEN = ["Tacos", "Guarniciones", "Entradas", "Segundo tiempo", "Plato fuerte", "Postres", "Bebidas", "Menú degustación", "Cocina turca"];
+const TITULOS = { Entradas: "Entrada", Postres: "Postre", Bebidas: "Bebida" };
+const money = v => new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", maximumFractionDigits: 0 }).format(v);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const $ = id => document.getElementById(id);
+let platillos = [], carrito = {};
+
+async function cargar() {
+  try {
+    const r = await fetch("/api/menu");
+    if (!r.ok) throw new Error();
+    platillos = await r.json();
+    pintar();
+  } catch (e) {
+    $("menu").innerHTML = '<p class="bad">No se pudo cargar el menú. Intenta de nuevo en un momento.</p>';
+  }
+}
+
+function pintar() {
+  const cats = [...new Set(platillos.map(p => p.category))].sort((a, b) => {
+    const x = ORDEN.indexOf(a), y = ORDEN.indexOf(b);
+    return (x < 0 ? 99 : x) - (y < 0 ? 99 : y);
+  });
+  $("nav").innerHTML = cats.map((c, i) => `<a href="#cat${i}">${esc(TITULOS[c] || c)}</a>`).join("");
+  $("menu").innerHTML = cats.map((c, i) => `<h2 id="cat${i}">${esc(TITULOS[c] || c)}</h2>` +
+    platillos.filter(p => p.category === c).map(p => `
+      <article class="item">
+        <div><div class="name">${esc(p.name)}</div>
+          <p class="desc">${esc(p.description || p.ingredients || "")}</p></div>
+        <div><div class="price">${money(p.price)}</div>
+          <div class="qty"><button type="button" data-n="${esc(p.name)}" data-d="-1" aria-label="Quitar uno">−</button>
+            <span id="q-${p.id}">0</span>
+            <button type="button" data-n="${esc(p.name)}" data-d="1" aria-label="Agregar uno">+</button></div></div>
+      </article>`).join("")).join("");
+  document.querySelectorAll(".qty button").forEach(b => b.onclick = () => cambiar(b.dataset.n, +b.dataset.d));
+}
+
+function cambiar(nombre, d) {
+  const q = Math.max(0, Math.min(50, (carrito[nombre] || 0) + d));
+  if (q) carrito[nombre] = q; else delete carrito[nombre];
+  const p = platillos.find(x => x.name === nombre);
+  $("q-" + p.id).textContent = q;
+  actualizar();
+}
+
+function total() { return Object.entries(carrito).reduce((s, [n, q]) => s + q * platillos.find(p => p.name === n).price, 0); }
+function actualizar() {
+  const n = Object.values(carrito).reduce((a, b) => a + b, 0);
+  $("send").disabled = !n;
+  $("send").textContent = n ? `Enviar (${n}) · ${money(total())}` : "Enviar · $0";
+}
+
+$("send").onclick = async () => {
+  const mesa = $("mesa").value.trim(), msg = $("msg");
+  if (!mesa) { msg.className = "bad"; msg.textContent = "Escribe tu mesa o nombre."; $("mesa").focus(); return; }
+  $("send").disabled = true; msg.textContent = "";
+  try {
+    const r = await fetch("/api/orders", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ customer: mesa, notes: $("notas").value.trim(), priority: "Media",
+        items: Object.entries(carrito).map(([name, qty]) => ({ name, qty })) })
+    });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || "No se pudo enviar el pedido");
+    carrito = {}; $("notas").value = ""; pintar(); actualizar();
+    msg.className = "ok"; msg.textContent = `¡Listo! Tu pedido ${d.code} ya está en cocina.`;
+  } catch (e) {
+    msg.className = "bad"; msg.textContent = e.message; actualizar();
+  }
+};
+
+cargar();
+</script>
 </body>
 </html>

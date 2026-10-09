@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chefmaster | Cocina</title>
+<style>
+  :root{--ink:#211e1a;--paper:#f7e9c7;--card:#fff9e9;--red:#c83b2b;--yellow:#f4c84a;--green:#4e977b;font-family:"Trebuchet MS","Arial Rounded MT Bold",sans-serif}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;color:var(--ink);background:var(--paper);background-image:radial-gradient(#c7a96d 1px,transparent 1px);background-size:13px 13px}
+  header{display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;padding:12px 20px;background:var(--ink);color:#fff9e9;position:sticky;top:0;z-index:5}
+  header h1{margin:0;font-family:Georgia,serif;font-size:24px}
+  #clock{font-size:22px;font-weight:700;margin-left:auto}
+  .count{padding:4px 12px;border-radius:999px;font-weight:700;font-size:14px;color:var(--ink)}
+  header button{border:3px solid #fff9e9;background:transparent;color:#fff9e9;font:inherit;font-weight:700;padding:6px 14px;border-radius:9px;cursor:pointer}
+  #error{background:#a52d22;color:#fff;padding:10px 20px;font-weight:700}
+  #error[hidden]{display:none}
+  .board{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;padding:16px;align-items:start}
+  @media(max-width:900px){.board{grid-template-columns:1fr}}
+  .col h2{margin:0 0 10px;padding:8px 14px;border:3px solid var(--ink);border-radius:10px;font-family:Georgia,serif;font-size:22px;display:flex;justify-content:space-between;box-shadow:4px 4px 0 var(--ink)}
+  .col.nuevo h2{background:var(--yellow)}.col.prep h2{background:#f09b8f}.col.listo h2{background:#9ad1b0}
+  .list{display:grid;gap:14px}
+  .empty{padding:20px;text-align:center;font-weight:700;opacity:.6}
+  .card{background:var(--card);border:4px solid var(--ink);border-radius:12px;padding:14px;box-shadow:5px 5px 0 var(--ink)}
+  .card.flash{animation:flash 1.4s ease-out 2}
+  @keyframes flash{0%,100%{background:var(--card)}50%{background:#ffe08a}}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+  .code{font-size:14px;font-weight:700;opacity:.7}
+  .mesa{font-family:Georgia,serif;font-size:26px;font-weight:900;line-height:1.1;word-break:break-word}
+  .timer{font-size:24px;font-weight:900;padding:2px 10px;border-radius:8px;border:3px solid var(--ink);white-space:nowrap}
+  .t-ok{background:#b9e2c6}.t-warn{background:var(--yellow)}.t-late{background:#ef8a7c}
+  .badge{display:inline-block;margin-top:6px;padding:2px 10px;border:2px solid var(--ink);border-radius:999px;font-size:13px;font-weight:700}
+  .badge.alta{background:var(--red);color:#fff}
+  ul{list-style:none;margin:12px 0;padding:0;font-size:20px;font-weight:700}
+  li{padding:6px 0;border-bottom:2px dashed #c9b88e}
+  li b{display:inline-block;min-width:38px}
+  .notes{margin:8px 0;padding:8px;background:#fff1c4;border:2px dashed var(--ink);border-radius:8px;font-weight:700}
+  .act{width:100%;min-height:52px;margin-top:6px;border:3px solid var(--ink);border-radius:10px;font:inherit;font-size:18px;font-weight:900;cursor:pointer;box-shadow:3px 3px 0 var(--ink)}
+  .act:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+  .act:disabled{opacity:.5;cursor:wait}
+  .a-nuevo{background:var(--yellow)}.a-prep{background:#9ad1b0}.a-listo{background:#fff9e9}
+</style>
+</head>
+<body>
+<header>
+  <h1>Chefmaster · Cocina</h1>
+  <span class="count" id="c1" style="background:var(--yellow)"></span>
+  <span class="count" id="c2" style="background:#f09b8f"></span>
+  <span class="count" id="c3" style="background:#9ad1b0"></span>
+  <span id="clock"></span>
+  <button id="salir" type="button">Salir</button>
+</header>
+<div id="error" hidden></div>
+<main class="board">
+  <section class="col nuevo"><h2>Nuevas <span id="n1">0</span></h2><div class="list" id="l1"></div></section>
+  <section class="col prep"><h2>En preparación <span id="n2">0</span></h2><div class="list" id="l2"></div></section>
+  <section class="col listo"><h2>Listas para entregar <span id="n3">0</span></h2><div class="list" id="l3"></div></section>
+</main>
+<script>
+const token = sessionStorage.getItem("token");
+if (!token) location.href = "/";
+
+const COLS = [
+  { status: "Nuevo", list: "l1", n: "n1", act: { text: "Iniciar", next: "En preparación", cls: "a-nuevo" } },
+  { status: "En preparación", list: "l2", n: "n2", act: { text: "Listo", next: "Listo", cls: "a-prep" } },
+  { status: "Listo", list: "l3", n: "n3", act: { text: "Entregado", next: "Entregado", cls: "a-listo" } }
+];
+const PRIO = { Alta: 0, Media: 1, Baja: 2 };
+let orders = [], seen = null;
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+async function api(url, opt = {}) {
+  const r = await fetch(url, {
+    method: opt.method || "GET",
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+    body: opt.body ? JSON.stringify(opt.body) : undefined
+  });
+  if (r.status === 401) { sessionStorage.clear(); location.href = "/"; return new Promise(() => {}); }
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error || "Error del servidor");
+  return d;
+}
+
+function showError(msg) { const e = $("error"); e.hidden = !msg; e.textContent = msg || ""; }
+
+async function load() {
+  try { orders = await api("/api/orders"); showError(""); }
+  catch (e) { showError("Sin conexión con el servidor. Reintentando…"); return; }
+  render();
+}
+
+function minutes(o) { return (Date.now() - new Date(o.created_at).getTime()) / 60000; }
+
+function render() {
+  const firstLoad = seen === null;
+  const ids = new Set(orders.map(o => o.id));
+  COLS.forEach((col, idx) => {
+    const list = orders.filter(o => o.status === col.status)
+      .sort((a, b) => (PRIO[a.priority] - PRIO[b.priority]) || (new Date(a.created_at) - new Date(b.created_at)));
+    $(col.n).textContent = list.length;
+    $("c" + (idx + 1)).textContent = col.status + ": " + list.length;
+    $(col.list).innerHTML = list.length ? list.map(o => `
+      <article class="card ${!firstLoad && !seen.has(o.id) ? "flash" : ""}">
+        <div class="top">
+          <div><div class="code">${esc(o.code)}</div><div class="mesa">${esc(o.customer)}</div>
+            <span class="badge ${o.priority === "Alta" ? "alta" : ""}">Prioridad ${esc(o.priority)}</span></div>
+          <div class="timer" data-t="${esc(o.created_at)}" data-s="${esc(o.status)}"></div>
+        </div>
+        <ul>${o.items.map(i => `<li><b>${i.qty}×</b> ${esc(i.name)}</li>`).join("")}</ul>
+        ${o.notes ? `<div class="notes">Nota: ${esc(o.notes)}</div>` : ""}
+        <button class="act ${col.act.cls}" data-id="${o.id}" data-next="${col.act.next}" type="button">${col.act.text}</button>
+      </article>`).join("") : '<div class="empty">Sin comandas</div>';
+  });
+  seen = ids;
+  document.querySelectorAll(".act").forEach(b => b.onclick = async () => {
+    b.disabled = true;
+    try { await api(`/api/orders/${b.dataset.id}/status`, { method: "PATCH", body: { status: b.dataset.next } }); await load(); }
+    catch (e) { showError(e.message); b.disabled = false; }
+  });
+  tick();
+}
+
+function tick() {
+  $("clock").textContent = new Date().toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit" });
+  document.querySelectorAll(".timer").forEach(t => {
+    const ms = Date.now() - new Date(t.dataset.t).getTime();
+    const m = Math.max(0, Math.floor(ms / 60000)), s = Math.max(0, Math.floor(ms / 1000) % 60);
+    t.textContent = String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+    t.className = "timer " + (t.dataset.s === "Listo" ? "t-warn" : m < 10 ? "t-ok" : m < 20 ? "t-warn" : "t-late");
+  });
+}
+
+$("salir").onclick = () => { sessionStorage.clear(); location.href = "/"; };
+load();
+setInterval(load, 5000);
+setInterval(tick, 1000);
+</script>
+</body>
+</html>

@@ -103,6 +103,8 @@
         .client-button:hover { background: #a92e22; }
         .admin-button { background: var(--yellow); }
         .admin-button:hover { background: #f8d86f; }
+        .kitchen-button { background: #9ad1b0; }
+        .kitchen-button:hover { background: #b2dfc4; }
 
         .arrow { float: right; font-size: 20px; line-height: 1; }
 
@@ -163,13 +165,16 @@
             <button class="client-button" id="client-button" type="button">
                 Entrar como cliente <span class="arrow" aria-hidden="true">&rarr;</span>
             </button>
+            <button class="kitchen-button" id="kitchen-button" type="button" aria-expanded="false" aria-controls="admin-panel">
+                Cocina <span class="arrow" aria-hidden="true">&rarr;</span>
+            </button>
             <button class="admin-button" id="admin-button" type="button" aria-expanded="false" aria-controls="admin-panel">
                 Administración <span class="arrow" aria-hidden="true">&rarr;</span>
             </button>
         </div>
 
         <form id="admin-panel" hidden>
-            <label for="admin-password">Contraseña de administración</label>
+            <label for="admin-password" id="password-label">Contraseña de administración</label>
             <input id="admin-password" name="password" type="password" autocomplete="current-password" required>
             <button class="submit-button" type="submit">Acceder <span class="arrow" aria-hidden="true">&rarr;</span></button>
             <p id="login-message" role="alert" aria-live="polite"></p>
@@ -178,24 +183,34 @@
 
     <script>
         const CLIENT_URL = "cliente.html";
-        const ADMIN_URL = "administracion.html";
+        const DESTINOS = { admin: "administracion.html", cocina: "cocina.html" };
+        const ETIQUETAS = { admin: "Contraseña de administración", cocina: "Contraseña de cocina" };
+        let rolActual = "admin";
 
         const adminButton = document.querySelector("#admin-button");
+        const kitchenButton = document.querySelector("#kitchen-button");
         const adminPanel = document.querySelector("#admin-panel");
         const passwordInput = document.querySelector("#admin-password");
+        const passwordLabel = document.querySelector("#password-label");
         const loginMessage = document.querySelector("#login-message");
 
         document.querySelector("#client-button").addEventListener("click", () => {
             window.location.href = CLIENT_URL;
         });
 
-        adminButton.addEventListener("click", () => {
-            adminPanel.hidden = !adminPanel.hidden;
-            adminButton.setAttribute("aria-expanded", String(!adminPanel.hidden));
+        function elegir(rol) {
+            const mismo = !adminPanel.hidden && rolActual === rol;
+            rolActual = rol;
+            adminPanel.hidden = mismo;
+            passwordLabel.textContent = ETIQUETAS[rol];
+            passwordInput.value = "";
             loginMessage.textContent = "";
-
+            adminButton.setAttribute("aria-expanded", String(!adminPanel.hidden && rol === "admin"));
+            kitchenButton.setAttribute("aria-expanded", String(!adminPanel.hidden && rol === "cocina"));
             if (!adminPanel.hidden) passwordInput.focus();
-        });
+        }
+        adminButton.addEventListener("click", () => elegir("admin"));
+        kitchenButton.addEventListener("click", () => elegir("cocina"));
 
         // La contraseña se valida en el servidor, nunca en el navegador
         adminPanel.addEventListener("submit", async (event) => {
@@ -206,13 +221,14 @@
                 const r = await fetch("/api/login", {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ password: passwordInput.value })
+                    body: JSON.stringify({ role: rolActual, password: passwordInput.value })
                 });
                 const d = await r.json().catch(() => ({}));
                 if (!r.ok) throw new Error(d.error || "Error del servidor");
 
                 sessionStorage.setItem("token", d.token);
-                window.location.href = ADMIN_URL;
+                sessionStorage.setItem("role", d.role);
+                window.location.href = DESTINOS[d.role];
             } catch (err) {
                 loginMessage.textContent = err.message;
                 passwordInput.select();
