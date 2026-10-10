@@ -82,9 +82,9 @@ mysql --version
 code --version
 ```
 
-✅ **Debe salir:** un número de versión en cada uno.
+ **Debe salir:** un número de versión en cada uno.
 
-❌ **Si en `mysql --version` dice que "no se reconoce":** MySQL sí se instaló, solo falta decirle a Windows dónde está.
+ **Si en `mysql --version` dice que "no se reconoce":** MySQL sí se instaló, solo falta decirle a Windows dónde está.
 
 1. Abre el Explorador de archivos y ve a `C:\Program Files\MySQL\`. Entra a la carpeta **MySQL Server ...** y luego a **bin**. Copia esa ruta de la barra de arriba (el número de versión puede ser distinto en cada compu).
 2. Presiona la tecla Windows, escribe **variables de entorno** y abre **Editar las variables de entorno del sistema**.
@@ -105,7 +105,7 @@ cd ChefMasterSoftware
 npm install
 ```
 
-✅ **Debe salir:** al final algo como `added 80 packages` y `found 0 vulnerabilities`.
+ **Debe salir:** al final algo como `added 80 packages` y `found 0 vulnerabilities`.
 
 ---
 
@@ -148,7 +148,7 @@ mysql -u root -p --default-character-set=utf8mb4
 
 Te pide la contraseña de root. **Al escribirla no se ve nada, es normal.** Dale Enter.
 
-✅ **Debe salir:** `mysql>`
+ **Debe salir:** `mysql>`
 
 Ahora corre estas 4 líneas **en este orden**, una por una (con el punto y coma):
 
@@ -159,7 +159,7 @@ source seed_demo.sql;
 source seed_stock_menu.sql;
 ```
 
-✅ **Debe salir:** muchas líneas de `Query OK`. Si sale algo con `ERROR`, ve a "Si algo falla" más abajo.
+ **Debe salir:** muchas líneas de `Query OK`. Si sale algo con `ERROR`, ve a "Si algo falla" más abajo.
 
 Para salir de MySQL escribe:
 
@@ -175,9 +175,9 @@ exit
 npm run dev
 ```
 
-✅ **Debe salir:** `ChefMaster en http://localhost:3000`
+ **Debe salir:** `ChefMaster en http://localhost:3000`
 
-⚠️ **Deja esa ventana abierta.** Si la cierras, se apaga el servidor. Para apagarlo a propósito, presiona `Ctrl + C`.
+ **Deja esa ventana abierta.** Si la cierras, se apaga el servidor. Para apagarlo a propósito, presiona `Ctrl + C`.
 
 ---
 
