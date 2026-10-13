@@ -96,6 +96,7 @@
       <div><label class="block font-bold mb-1" for="cx-name">Nombre</label><input id="cx-name" class="field" type="text" maxlength="100"></div>
       <div><label class="block font-bold mb-1" for="cx-cat">Categoría</label><input id="cx-cat" class="field" type="text" list="cx-cats" maxlength="40" placeholder="Tacos, Postres…"></div>
       <div><label class="block font-bold mb-1" for="cx-price">Precio</label><input id="cx-price" class="field" type="number" min="0" step="1"></div>
+      <div><label class="block font-bold mb-1" for="cx-img">Foto (ruta o enlace)</label><input id="cx-img" class="field" type="text" maxlength="255" placeholder="/img/mi-platillo.jpg"></div>
     </div>
     <label class="block font-bold mb-1" style="margin-top:12px" for="cx-desc">Descripción para el cliente</label>
     <textarea id="cx-desc" class="field" rows="2" placeholder="Ingredientes y cómo se sirve"></textarea>
@@ -128,7 +129,7 @@
     const err = $("cx-error"); err.textContent = "";
     const body = {
       name: $("cx-name").value.trim(), category: $("cx-cat").value.trim(),
-      price: parseFloat($("cx-price").value), description: $("cx-desc").value.trim(),
+      price: parseFloat($("cx-price").value), description: $("cx-desc").value.trim(), image_url: $("cx-img").value.trim(),
       ingredients: [...$("cx-ings").children].map(r => {
         const [n, q] = r.querySelectorAll("input");
         return { name: n.value.trim(), qty: parseFloat(q.value) };
@@ -139,7 +140,7 @@
     }
     try {
       await api("/api/recipes", { method: "POST", body });
-      ["cx-name", "cx-cat", "cx-price", "cx-desc"].forEach(id => { $(id).value = ""; });
+      ["cx-name", "cx-cat", "cx-price", "cx-desc", "cx-img"].forEach(id => { $(id).value = ""; });
       $("cx-ings").innerHTML = ""; addIngRow(); addIngRow();
       await loadAll(); toast("Platillo añadido a la carta.");
     } catch (e) { err.textContent = e.message; }
@@ -151,15 +152,18 @@
     $("cx-ing-list").innerHTML = inventory.map(i => `<option value="${esc(i.name)}">`).join("");
     $("carta-list").innerHTML = porCategoria().map(([cat, nombres]) =>
       `<div class="tm-cat">${esc(cat)}</div>` + nombres.map(n => `
-        <div class="cx-row"><b style="flex:1;min-width:180px">${esc(n)}</b>
+        <div class="cx-row">${recipes[n].image_url ? `<img src="${esc(recipes[n].image_url)}" alt="" style="width:44px;height:44px;object-fit:cover;border:2px solid #24211e;border-radius:8px" onerror="this.remove()">` : ""}<b style="flex:1;min-width:160px">${esc(n)}</b>
           <label class="font-bold">$ <input class="field cx-precio" type="number" min="0" step="1" value="${recipes[n].price}" data-n="${esc(n)}"></label>
           <label class="font-bold"><input type="checkbox" class="cx-vis" data-n="${esc(n)}" ${recipes[n].active !== false ? "checked" : ""}> Visible</label>
+          <input class="field cx-foto" type="text" style="width:200px" placeholder="/img/archivo.jpg" value="${esc(recipes[n].image_url || "")}" data-n="${esc(n)}" aria-label="Foto de ${esc(n)}">
         </div>`).join("")).join("");
     $("carta-list").querySelectorAll(".cx-precio").forEach(inp => inp.onchange = () => {
       const p = parseFloat(inp.value);
       if (!(p >= 0)) return;
       act(() => api(`/api/recipes/${recipes[inp.dataset.n].id}`, { method: "PATCH", body: { price: p } }), "Precio actualizado.");
     });
+    $("carta-list").querySelectorAll(".cx-foto").forEach(inp => inp.onchange = () =>
+      act(() => api(`/api/recipes/${recipes[inp.dataset.n].id}`, { method: "PATCH", body: { image_url: inp.value.trim() } }), "Foto actualizada."));
     $("carta-list").querySelectorAll(".cx-vis").forEach(chk => chk.onchange = () =>
       act(() => api(`/api/recipes/${recipes[chk.dataset.n].id}`, { method: "PATCH", body: { active: chk.checked } }),
           chk.checked ? "Platillo visible en el menú." : "Platillo oculto del menú."));

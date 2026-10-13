@@ -51,9 +51,10 @@ app.use('/api', (req, res, next) => {
 });
 
 // ================= Catálogo =================
+const cleanImg = v => { v = String(v || '').trim().slice(0, 255); return /^(\/img\/[\w.\-]+|https?:\/\/[^\s"'<>]+)$/.test(v) ? v : null; };
 app.get('/api/menu', wrap(async (_, res) => {          // público: lo que ve el cliente
   const [rows] = await pool.query(
-    `SELECT r.id, r.name, r.price, r.category, r.description,
+    `SELECT r.id, r.name, r.price, r.category, r.description, r.image_url,
             GROUP_CONCAT(i.name ORDER BY ri.qty DESC SEPARATOR ', ') AS ingredients
      FROM recipes r
      LEFT JOIN recipe_ingredients ri ON ri.recipe_id = r.id
@@ -64,11 +65,11 @@ app.get('/api/menu', wrap(async (_, res) => {          // público: lo que ve el
 
 app.get('/api/recipes', wrap(async (_, res) => {
   const [rows] = await pool.query(
-    `SELECT r.id, r.name, r.price, r.category, r.description, r.active, ri.qty, i.name AS ingredient
+    `SELECT r.id, r.name, r.price, r.category, r.description, r.image_url, r.active, ri.qty, i.name AS ingredient
      FROM recipes r JOIN recipe_ingredients ri ON ri.recipe_id = r.id JOIN ingredients i ON i.id = ri.ingredient_id`);
   const out = {};
   rows.forEach(r => {
-    (out[r.name] ||= { id: r.id, price: r.price, category: r.category, description: r.description, active: !!r.active, ingredients: [] })
+    (out[r.name] ||= { id: r.id, price: r.price, category: r.category, description: r.description, image_url: r.image_url, active: !!r.active, ingredients: [] })
       .ingredients.push([r.ingredient, r.qty]);
   });
   res.json(out);
@@ -76,7 +77,7 @@ app.get('/api/recipes', wrap(async (_, res) => {
 
 // Añadir un platillo nuevo a la carta
 app.post('/api/recipes', wrap(async (req, res) => {
-  const { name, category, price, description = '', ingredients = [] } = req.body;
+  const { name, category, price, description = '', image_url, ingredients = [] } = req.body;
   if (!name || !category || !(price >= 0) || !Array.isArray(ingredients) || !ingredients.length)
     return res.status(400).json({ error: 'Faltan datos del platillo' });
   const names = ingredients.map(i => i.name);
@@ -86,8 +87,8 @@ app.post('/api/recipes', wrap(async (req, res) => {
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
-    const [r] = await conn.query('INSERT INTO recipes (name,price,category,description) VALUES (?,?,?,?)',
-      [String(name).trim(), price, category, description]);
+    const [r] = await conn.query('INSERT INTO recipes (name,price,category,description,image_url) VALUES (?,?,?,?,?)',
+      [String(name).trim(), price, category, description, cleanImg(image_url)]);
     for (const i of ingredients)
       await conn.query('INSERT INTO recipe_ingredients (recipe_id,ingredient_id,qty) SELECT ?, id, ? FROM ingredients WHERE name=?',
         [r.insertId, i.qty, i.name]);
@@ -102,9 +103,10 @@ app.post('/api/recipes', wrap(async (req, res) => {
 
 // Cambiar precio o ocultar/mostrar un platillo
 app.patch('/api/recipes/:id', wrap(async (req, res) => {
-  const { price, active } = req.body;
+  const { price, active, image_url } = req.body;
   if (price !== undefined) await pool.query('UPDATE recipes SET price=? WHERE id=?', [price, req.params.id]);
   if (active !== undefined) await pool.query('UPDATE recipes SET active=? WHERE id=?', [active ? 1 : 0, req.params.id]);
+  if (image_url !== undefined) await pool.query('UPDATE recipes SET image_url=? WHERE id=?', [cleanImg(image_url), req.params.id]);
   res.json({ ok: true });
 }));
 
@@ -126,7 +128,7 @@ async function loadOrders(deleted) {
     `SELECT * FROM orders WHERE deleted_at IS ${deleted ? 'NOT NULL' : 'NULL'} ORDER BY id DESC`);
   if (!orders.length) return [];
   const [items] = await pool.query(
-    `SELECT oi.order_id, r.name, oi.qty FROM order_items oi JOIN recipes r ON r.id=oi.recipe_id
+    `SELECT oi.order_id, r.name, r.image_url, oi.qty FROM order_items oi JOIN recipes r ON r.id=oi.recipe_id
      WHERE oi.order_id IN (?)`, [orders.map(o => o.id)]);
   return orders.map(o => ({ ...o, code: `TR-${o.id}`, items: items.filter(i => i.order_id === o.id) }));
 }
@@ -273,8 +275,8 @@ app.post('/api/inventory/:id/movement', wrap(async (req, res) => {
 app.post('/api/reset', wrap(async (req, res) => {
   if (!process.env.RESET_KEY || req.body.key !== process.env.RESET_KEY)
     return res.status(403).json({ error: 'Clave incorrecta' });
-     const sql = ['seed_demo.sql', 'seed_stock_menu.sql'].filter(f => fs.existsSync(path.join(__dirname, f)))
-     .map(f => fs.readFileSync(path.join(__dirname, f), 'utf8')).join('\n');
+  const sql = ['seed_demo.sql', 'seed_stock_menu.sql'].filter(f => fs.existsSync(path.join(__dirname, f)))
+    .map(f => fs.readFileSync(path.join(__dirname, f), 'utf8')).join('\n');
   const conn = await mysql.createConnection({ ...dbConfig, multipleStatements: true });
   try { await conn.query(sql); } finally { await conn.end(); }
   res.json({ ok: true });

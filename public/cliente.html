@@ -17,6 +17,7 @@
   main{max-width:820px;margin:0 auto;padding:0 18px}
   h2{margin:28px 0 12px;font-family:Georgia,serif;font-size:28px;border-bottom:4px solid var(--ink);padding-bottom:4px}
   .item{background:var(--card);border:3px solid var(--ink);border-radius:12px;padding:14px;margin-bottom:14px;box-shadow:4px 4px 0 var(--ink);display:grid;grid-template-columns:1fr auto;gap:10px 14px}
+  .foto{grid-column:1/-1;display:block;width:100%;aspect-ratio:16/10;object-fit:cover;border:3px solid var(--ink);border-radius:9px;background:#e9dcb8}
   .name{font-weight:900;font-size:19px}
   .desc{margin:6px 0 0;color:var(--muted);font-weight:600;line-height:1.4;font-size:15px}
   .price{font-weight:900;font-size:19px;text-align:right}
@@ -83,6 +84,7 @@ function pintar() {
   $("menu").innerHTML = cats.map((c, i) => `<h2 id="cat${i}">${esc(TITULOS[c] || c)}</h2>` +
     platillos.filter(p => p.category === c).map(p => `
       <article class="item">
+        ${p.image_url ? `<img class="foto" src="${esc(p.image_url)}" alt="${esc(p.name)}" loading="lazy" onerror="this.remove()">` : ""}
         <div><div class="name">${esc(p.name)}</div>
           <p class="desc">${esc(p.description || p.ingredients || "")}</p></div>
         <div><div class="price">${money(p.price)}</div>
