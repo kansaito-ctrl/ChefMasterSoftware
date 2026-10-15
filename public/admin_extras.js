@@ -177,4 +177,19 @@
   const _renderAll = renderAll;
   renderAll = function () { _renderAll(); renderCarta(); };
   renderCarta();
+
+  // ================= Textos: quitar "demostración" y "turco" =================
+  const setText = (tpl, txt) => { const el = document.querySelector(`[data-template-id="${tpl}"]`); if (el) el.textContent = txt; };
+  setText("app-tagline", "OPERACIONES DE COCINA");
+  setText("shift-status", "Cocina abierta");
+  setText("home-date", new Date().toLocaleDateString("es-MX", { weekday: "long", day: "numeric", month: "long" }));
+  setText("sidebar-note-text", "Cada pedido preparado descuenta el almacén una sola vez.");
+  setText("reports-note", "Información en tiempo real del servicio.");
+  setText("report-summary-title", "Resumen");
+  const _renderReports = renderReports;
+  renderReports = function () {
+    _renderReports();
+    const s = $("report-summary");
+    if (s) s.innerHTML = s.innerHTML.replace("Datos de demostración de la sesión actual.", "Información del servicio actual.");
+  };
 })();
