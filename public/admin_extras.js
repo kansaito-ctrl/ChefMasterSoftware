@@ -192,4 +192,141 @@
     const s = $("report-summary");
     if (s) s.innerHTML = s.innerHTML.replace("Datos de demostración de la sesión actual.", "Información del servicio actual.");
   };
+
+  // ================= Pedidos: detalle junto a la lista =================
+  const css2 = document.createElement("style");
+  css2.textContent = `
+    @media (min-width:1024px){
+      #pedidos [class*="lg:grid-cols-5"] > section:nth-of-type(1){grid-column:1 / span 3;grid-row:1}
+      #pedidos [class*="lg:grid-cols-5"] > section:nth-of-type(2){grid-column:1 / span 3;grid-row:2}
+      #pedidos [class*="lg:grid-cols-5"] > aside{grid-column:4 / span 2;grid-row:1;align-self:start;position:sticky;top:12px}
+    }
+    .inv-bar{height:8px;margin-top:4px;border:2px solid #24211e;border-radius:99px;background:#fffdf6;overflow:hidden;min-width:90px}
+    .inv-bar span{display:block;height:100%}
+    .inv-base{font-size:12px;font-weight:700;opacity:.8}
+    #live{margin-left:12px;font-size:13px;font-weight:700}
+  `;
+  document.head.appendChild(css2);
+
+  // ================= Inventario: orden alfabético y "restante" =================
+  const num = new Intl.NumberFormat("es-MX", { maximumFractionDigits: 2 });
+  const _renderInventory = renderInventory;
+  renderInventory = function () {
+    inventory.sort((a, b) => a.name.localeCompare(b.name, "es"));
+    _renderInventory();
+    const th = document.querySelectorAll("#inventario thead th");
+    if (th[2]) th[2].textContent = "Restante";
+    if (th[3]) th[3].textContent = "Mínimo base";
+    document.querySelectorAll("#inventory-table tr").forEach(tr => {
+      const c = tr.children, ing = inventory.find(i => i.name === c[0].textContent.trim());
+      if (!ing) return;
+      const base = Number(ing.base_quantity) || 0, q = Number(ing.quantity);
+      const pct = base ? Math.max(0, Math.min(100, Math.round(q / base * 100))) : 0;
+      const color = q <= 0 ? "#d73a31" : q <= ing.minimum ? "#e0aa29" : "#4e977b";
+      c[2].innerHTML = `<b>${num.format(q)} ${esc(ing.unit)}</b>` + (base
+        ? `<div class="inv-base">de ${num.format(base)} ${esc(ing.unit)} · ${pct}%</div><div class="inv-bar"><span style="width:${pct}%;background:${color}"></span></div>` : "");
+      c[3].textContent = `${num.format(ing.minimum)} ${ing.unit}`;
+    });
+  };
+
+  // ================= En vivo: se actualiza solo cada 5 segundos =================
+  const live = document.createElement("span");
+  live.id = "live"; live.textContent = "● En vivo";
+  const shift = document.querySelector('[data-template-id="shift-status"]');
+  if (shift) shift.parentElement.appendChild(live);
+  const _loadAll = loadAll;
+  loadAll = async function () {
+    await _loadAll();
+    live.textContent = "● En vivo · " + new Date().toLocaleTimeString("es-MX", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  };
+  setInterval(() => {
+    const el = document.activeElement;   // no se actualiza si estás escribiendo o hay una ventana abierta
+    if (document.hidden || document.querySelector(".modal.open") || (el && /^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName))) return;
+    loadAll().catch(() => {});
+  }, 5000);
+  // ================= Costeo de la carta (ganancia, mano de obra y margen de error) =================
+  const CFG_KEY = "chefmaster_costeo";
+  const cfg = (() => {
+    const base = { g: 45, mo: 10, err: 10, modo: "venta" };
+    try { return Object.assign(base, JSON.parse(localStorage.getItem(CFG_KEY) || "{}")); } catch (e) { return base; }
+  })();
+  const pesos = v => new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN", minimumFractionDigits: 2 }).format(v);
+
+  const cs = document.createElement("section");
+  cs.className = "paper p-5 lg:col-span-2";
+  cs.innerHTML = `
+    <h3 class="brand font-bold" style="font-size:19px;font-weight:800">Costeo de la carta</h3>
+    <p class="font-semibold" style="margin:6px 0 12px">El precio sugerido sale del costo real de los insumos de cada receta, más mano de obra, margen de error y ganancia.</p>
+    <div class="cx-grid">
+      <div><label class="block font-bold mb-1" for="cs-g">Ganancia (%)</label><input id="cs-g" class="field" type="number" min="0" max="95" step="1"></div>
+      <div><label class="block font-bold mb-1" for="cs-mo">Mano de obra (%)</label><input id="cs-mo" class="field" type="number" min="0" max="95" step="1"></div>
+      <div><label class="block font-bold mb-1" for="cs-err">Margen de error (%)</label><input id="cs-err" class="field" type="number" min="0" max="95" step="1"></div>
+      <div><label class="block font-bold mb-1">Total de margen</label><div id="cs-total" class="field" style="font-weight:800"></div></div>
+      <div><label class="block font-bold mb-1" for="cs-modo">Los porcentajes se aplican</label>
+        <select id="cs-modo" class="field"><option value="venta">Sobre el precio de venta</option><option value="costo">Sumados al costo</option></select></div>
+    </div>
+    <p id="cs-nota" class="font-semibold" style="margin:10px 0"></p>
+    <div style="overflow-x:auto"><table style="min-width:900px"><thead><tr>
+      <th>Platillo</th><th>Costo de insumos</th><th>Mano de obra</th><th>Margen de error</th><th>Ganancia</th><th>Precio sugerido</th><th>Precio actual</th><th>Margen actual</th><th></th>
+    </tr></thead><tbody id="cs-body"></tbody></table></div>
+    <button id="cs-todos" class="comic-btn btn-red" type="button" style="margin-top:12px">Aplicar precios sugeridos a toda la carta</button>`;
+  document.querySelector("#configuracion .grid").appendChild(cs);
+
+  $("cs-g").value = cfg.g; $("cs-mo").value = cfg.mo; $("cs-err").value = cfg.err; $("cs-modo").value = cfg.modo;
+  const guardarCfg = () => { try { localStorage.setItem(CFG_KEY, JSON.stringify(cfg)); } catch (e) {} };
+  [["cs-g", "g"], ["cs-mo", "mo"], ["cs-err", "err"]].forEach(([id, k]) =>
+    $(id).addEventListener("input", () => { cfg[k] = Math.max(0, Math.min(95, parseFloat($(id).value) || 0)); guardarCfg(); renderCosteo(); }));
+  $("cs-modo").addEventListener("change", () => { cfg.modo = $("cs-modo").value; guardarCfg(); renderCosteo(); });
+
+  function costoDe(nombre) {
+    let total = 0, sinPrecio = 0;
+    for (const [ing, qty] of recipes[nombre].ingredients) {
+      const i = inventory.find(x => x.name === ing), p = i ? Number(i.price) : 0;
+      if (!p) sinPrecio++;
+      total += Number(qty) * p;
+    }
+    return { total, sinPrecio };
+  }
+  function sugerido(costo) {
+    const pct = (cfg.g + cfg.mo + cfg.err) / 100;
+    const venta = cfg.modo === "venta";
+    if (venta && pct >= 1) return null;
+    const precio = venta ? costo / (1 - pct) : costo * (1 + pct), base = venta ? precio : costo;
+    return { precio, mo: base * cfg.mo / 100, err: base * cfg.err / 100, g: base * cfg.g / 100 };
+  }
+  const activos = () => porCategoria().flatMap(([, nombres]) => nombres).filter(n => recipes[n].active !== false);
+
+  function renderCosteo() {
+    if (!Object.keys(recipes).length) return;
+    const total = cfg.g + cfg.mo + cfg.err;
+    $("cs-total").textContent = total + "%";
+    $("cs-nota").textContent = cfg.modo === "venta"
+      ? `Cada porcentaje es parte del precio de venta: los insumos representan el ${Math.max(0, 100 - total)}% y el precio = costo ÷ ${(Math.max(0, 100 - total) / 100).toFixed(2)}.`
+      : `Los porcentajes se suman al costo de los insumos: precio = costo × ${(1 + total / 100).toFixed(2)}.`;
+    if (cfg.modo === "venta" && total >= 100) { $("cs-body").innerHTML = '<tr><td colspan="9"><b>Los porcentajes suman 100% o más: baja alguno.</b></td></tr>'; return; }
+    $("cs-body").innerHTML = activos().map(n => {
+      const c = costoDe(n), r = recipes[n];
+      if (!c.total) return `<tr><td><b>${esc(n)}</b></td><td colspan="8">Sin costo: revisa los precios de sus ingredientes.</td></tr>`;
+      const s = sugerido(c.total), redondo = Math.ceil(s.precio), actual = Number(r.price);
+      const margen = actual ? Math.round((actual - c.total) / actual * 100) : 0;
+      return `<tr><td><b>${esc(n)}</b>${c.sinPrecio ? `<div class="inv-base">${c.sinPrecio} ingrediente(s) sin precio</div>` : ""}</td>
+        <td>${pesos(c.total)}</td><td>${pesos(s.mo)}</td><td>${pesos(s.err)}</td><td>${pesos(s.g)}</td>
+        <td><b>${pesos(redondo)}</b></td><td>${pesos(actual)}</td><td>${margen}%</td>
+        <td>${redondo === actual ? "✓" : `<button class="comic-btn btn-mint cs-aplicar" type="button" data-n="${esc(n)}" data-p="${redondo}">Aplicar</button>`}</td></tr>`;
+    }).join("");
+    $("cs-body").querySelectorAll(".cs-aplicar").forEach(b => b.onclick = () =>
+      act(() => api(`/api/recipes/${recipes[b.dataset.n].id}`, { method: "PATCH", body: { price: +b.dataset.p } }), "Precio actualizado."));
+  }
+  $("cs-todos").onclick = () => openConfirm("Aplicar precios sugeridos",
+    "<p>Se cambiará el precio de venta de <b>todos los platillos visibles</b> con el precio sugerido de esta tabla.</p>",
+    () => act(async () => {
+      for (const n of activos()) {
+        const c = costoDe(n), s = c.total && sugerido(c.total);
+        if (s) await api(`/api/recipes/${recipes[n].id}`, { method: "PATCH", body: { price: Math.ceil(s.precio) } });
+      }
+    }, "Precios actualizados en toda la carta."), "Aplicar a toda la carta");
+
+  const _renderAll2 = renderAll;
+  renderAll = function () { _renderAll2(); renderCosteo(); };
+  renderCosteo();
 })();
