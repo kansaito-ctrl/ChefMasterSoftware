@@ -4,28 +4,41 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Chefmaster | Menú</title>
+<link rel="stylesheet" href="/flipcard.css">
 <style>
   :root{--ink:#211e1a;--muted:#62584c;--paper:#f7e9c7;--card:#fff9e9;--red:#c83b2b;--yellow:#f4c84a;font-family:"Trebuchet MS","Arial Rounded MT Bold",sans-serif}
   *{box-sizing:border-box}
-  body{margin:0;color:var(--ink);background:var(--paper);background-image:radial-gradient(#c7a96d 1px,transparent 1px);background-size:13px 13px;padding-bottom:110px}
-  header{padding:22px 18px 8px;max-width:820px;margin:0 auto}
+  body{margin:0;color:var(--ink);background:var(--paper);background-image:radial-gradient(#c7a96d 1px,transparent 1px);background-size:13px 13px;padding-bottom:130px}
+  header{padding:22px 18px 8px;max-width:1100px;margin:0 auto}
   .brand{display:inline-block;padding:6px 12px;border:3px solid var(--ink);border-radius:50%;background:var(--red);color:#fff9e9;font-weight:700;font-size:13px;text-transform:uppercase;transform:rotate(-4deg);box-shadow:3px 3px 0 var(--ink)}
   h1{margin:14px 0 4px;font-family:Georgia,serif;font-size:clamp(34px,9vw,48px);text-shadow:2px 2px 0 var(--yellow)}
   .sub{margin:0;color:var(--muted);font-weight:600}
   nav{position:sticky;top:0;z-index:4;background:var(--paper);border-bottom:3px solid var(--ink);padding:10px 18px;overflow-x:auto;white-space:nowrap}
   nav a{display:inline-block;margin-right:8px;padding:6px 14px;border:3px solid var(--ink);border-radius:999px;background:var(--card);color:var(--ink);font-weight:700;text-decoration:none;font-size:14px}
-  main{max-width:820px;margin:0 auto;padding:0 18px}
-  h2{margin:28px 0 12px;font-family:Georgia,serif;font-size:28px;border-bottom:4px solid var(--ink);padding-bottom:4px}
-  .item{background:var(--card);border:3px solid var(--ink);border-radius:12px;padding:14px;margin-bottom:14px;box-shadow:4px 4px 0 var(--ink);display:grid;grid-template-columns:1fr auto;gap:10px 14px}
-  .foto{grid-column:1/-1;display:block;width:100%;aspect-ratio:16/10;object-fit:cover;border:3px solid var(--ink);border-radius:9px;background:#e9dcb8}
-  .name{font-weight:900;font-size:19px}
-  .desc{margin:6px 0 0;color:var(--muted);font-weight:600;line-height:1.4;font-size:15px}
-  .price{font-weight:900;font-size:19px;text-align:right}
-  .qty{display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:8px}
-  .qty button{width:40px;height:40px;border:3px solid var(--ink);border-radius:10px;background:var(--yellow);font:inherit;font-size:22px;font-weight:900;cursor:pointer}
+  main{max-width:1100px;margin:0 auto;padding:0 18px}
+  h2{margin:28px 0 14px;font-family:Georgia,serif;font-size:28px;border-bottom:4px solid var(--ink);padding-bottom:4px}
+  .hint{margin:6px 0 0;font-size:14px;font-weight:700;color:var(--muted)}
+
+  /* tarjetas que se voltean */
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:26px;margin-bottom:10px}
+  .cards .flip-card{--fc-w:100%;--fc-h:380px;display:block}
+  .flip-card__face{border:3px solid var(--ink)}
+  .flip-card__face--front{background:#3a3128;color:#fff9e9}
+  .fc-photo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .fc-info{position:absolute;left:0;right:0;bottom:0;padding:48px 14px 10px;background:linear-gradient(to top,rgba(20,16,12,.94) 0%,rgba(20,16,12,.82) 58%,rgba(20,16,12,0) 100%)}
+  .fc-name{font-family:Georgia,serif;font-weight:900;font-size:19px;line-height:1.15}
+  .fc-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:8px}
+  .fc-price{font-weight:900;font-size:19px}
+  .fc-link{margin-top:6px;background:none;border:0;padding:6px 0;color:inherit;font:inherit;font-weight:700;text-decoration:underline;cursor:pointer;min-height:36px}
+  .fc-back{height:100%;display:flex;flex-direction:column;padding:16px}
+  .fc-tag{align-self:flex-start;padding:2px 10px;border:2px solid var(--ink);border-radius:99px;background:var(--yellow);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
+  .fc-desc{flex:1;overflow:auto;margin:10px 0;line-height:1.45;font-weight:600;color:var(--muted);font-size:15px}
+  .qty{display:flex;align-items:center;gap:8px}
+  .qty button{width:40px;height:40px;border:3px solid var(--ink);border-radius:10px;background:var(--yellow);color:var(--ink);font:inherit;font-size:22px;font-weight:900;cursor:pointer}
   .qty span{min-width:26px;text-align:center;font-weight:900;font-size:20px}
+
   #bar{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:4px solid var(--ink);padding:10px 16px;z-index:6}
-  #bar .in{max-width:820px;margin:0 auto;display:grid;gap:8px}
+  #bar .in{max-width:1100px;margin:0 auto;display:grid;gap:8px}
   #bar .row{display:flex;gap:8px;align-items:center}
   input,textarea{width:100%;min-height:44px;padding:8px 10px;border:3px solid var(--ink);border-radius:8px;background:#fffdf7;font:inherit}
   #send{border:3px solid var(--ink);border-radius:10px;background:var(--red);color:#fff9e9;font:inherit;font-weight:900;padding:0 18px;min-height:46px;cursor:pointer;white-space:nowrap;box-shadow:3px 3px 0 var(--ink)}
@@ -40,6 +53,7 @@
   <span class="brand">Chefmaster</span>
   <h1>Nuestro menú</h1>
   <p class="sub">Elige tus platillos, escribe tu mesa y envía tu pedido a cocina.</p>
+  <p class="hint">Toca una tarjeta (o arrástrala) para ver sus ingredientes.</p>
   <a class="back" href="index.html">&larr; Volver al inicio</a>
 </header>
 <nav id="nav"></nav>
@@ -56,6 +70,7 @@
   </div>
 </div>
 
+<script src="/flipcard.js"></script>
 <script>
 const ORDEN = ["Tacos", "Guarniciones", "Entradas", "Segundo tiempo", "Plato fuerte", "Postres", "Bebidas", "Menú degustación", "Cocina turca"];
 const TITULOS = { Entradas: "Entrada", Postres: "Postre", Bebidas: "Bebida" };
@@ -75,31 +90,50 @@ async function cargar() {
   }
 }
 
+const stepper = (i, p) => `<div class="qty">
+  <button type="button" data-i="${i}" data-d="-1" aria-label="Quitar uno de ${esc(p.name)}">−</button>
+  <span data-q="${p.id}">${carrito[p.name] || 0}</span>
+  <button type="button" data-i="${i}" data-d="1" aria-label="Agregar uno de ${esc(p.name)}">+</button></div>`;
+
+function tarjeta(p, i) {
+  const foto = p.image_url ? `<img class="fc-photo" src="${esc(p.image_url)}" alt="" loading="lazy" onerror="this.remove()">` : "";
+  const cat = esc(TITULOS[p.category] || p.category);
+  return `<article class="flip-card" role="group" aria-roledescription="tarjeta que se voltea" aria-label="${esc(p.name)}">
+    <span class="flip-card__shadow" aria-hidden="true"></span>
+    <div class="flip-card__rotor">
+      <div class="flip-card__face flip-card__face--front">${foto}
+        <div class="fc-info"><div class="fc-name">${esc(p.name)}</div>
+          <div class="fc-row"><span class="fc-price">${money(p.price)}</span>${stepper(i, p)}</div>
+          <button type="button" class="fc-link" data-flip>Ver ingredientes ↻</button></div>
+        <span class="flip-card__glare" aria-hidden="true"></span></div>
+      <div class="flip-card__face flip-card__face--back">
+        <div class="fc-back"><div class="fc-tag">${cat}</div><div class="fc-name">${esc(p.name)}</div>
+          <p class="fc-desc">${esc(p.description || p.ingredients || "")}</p>
+          <div class="fc-row"><span class="fc-price">${money(p.price)}</span>${stepper(i, p)}</div>
+          <button type="button" class="fc-link" data-flip>Volver ↻</button></div>
+        <span class="flip-card__glare" aria-hidden="true"></span></div>
+    </div></article>`;
+}
+
 function pintar() {
   const cats = [...new Set(platillos.map(p => p.category))].sort((a, b) => {
     const x = ORDEN.indexOf(a), y = ORDEN.indexOf(b);
     return (x < 0 ? 99 : x) - (y < 0 ? 99 : y);
   });
   $("nav").innerHTML = cats.map((c, i) => `<a href="#cat${i}">${esc(TITULOS[c] || c)}</a>`).join("");
-  $("menu").innerHTML = cats.map((c, i) => `<h2 id="cat${i}">${esc(TITULOS[c] || c)}</h2>` +
-    platillos.filter(p => p.category === c).map(p => `
-      <article class="item">
-        ${p.image_url ? `<img class="foto" src="${esc(p.image_url)}" alt="${esc(p.name)}" loading="lazy" onerror="this.remove()">` : ""}
-        <div><div class="name">${esc(p.name)}</div>
-          <p class="desc">${esc(p.description || p.ingredients || "")}</p></div>
-        <div><div class="price">${money(p.price)}</div>
-          <div class="qty"><button type="button" data-n="${esc(p.name)}" data-d="-1" aria-label="Quitar uno">−</button>
-            <span id="q-${p.id}">0</span>
-            <button type="button" data-n="${esc(p.name)}" data-d="1" aria-label="Agregar uno">+</button></div></div>
-      </article>`).join("")).join("");
-  document.querySelectorAll(".qty button").forEach(b => b.onclick = () => cambiar(b.dataset.n, +b.dataset.d));
+  $("menu").innerHTML = cats.map((c, i) => `<h2 id="cat${i}">${esc(TITULOS[c] || c)}</h2><div class="cards">` +
+    platillos.map((p, idx) => [p, idx]).filter(([p]) => p.category === c).map(([p, idx]) => tarjeta(p, idx)).join("") + "</div>").join("");
+  document.querySelectorAll(".flip-card").forEach(el => {
+    const carta = FlipCard(el, { tiltMax: 8 });
+    el.querySelectorAll("[data-flip]").forEach(b => b.onclick = () => carta.flip(false));
+  });
+  document.querySelectorAll(".qty button").forEach(b => b.onclick = () => cambiar(+b.dataset.i, +b.dataset.d));
 }
 
-function cambiar(nombre, d) {
-  const q = Math.max(0, Math.min(50, (carrito[nombre] || 0) + d));
-  if (q) carrito[nombre] = q; else delete carrito[nombre];
-  const p = platillos.find(x => x.name === nombre);
-  $("q-" + p.id).textContent = q;
+function cambiar(i, d) {
+  const p = platillos[i], q = Math.max(0, Math.min(50, (carrito[p.name] || 0) + d));
+  if (q) carrito[p.name] = q; else delete carrito[p.name];
+  document.querySelectorAll(`[data-q="${p.id}"]`).forEach(s => { s.textContent = q; });
   actualizar();
 }
 
