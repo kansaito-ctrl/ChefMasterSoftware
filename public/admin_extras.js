@@ -75,6 +75,7 @@
   renderOrderDetail = function () {
     _renderOrderDetail();
     const o = orders.find(x => x.id === selectedOrderId), host = $("order-detail");
+    const pill = o && host.querySelector(".pill"); if (pill) pill.textContent = o.status;   // antes mostraba la prioridad
     if (!o || o.status === "Entregado" || !host.firstElementChild) return;
     const b = document.createElement("button");
     b.type = "button"; b.className = "comic-btn btn-gold w-full mt-4";
@@ -244,6 +245,20 @@
     if (document.hidden || document.querySelector(".modal.open") || (el && /^(INPUT|SELECT|TEXTAREA)$/.test(el.tagName))) return;
     loadAll().catch(() => {});
   }, 5000);
+
+  // ================= Sin prioridad (Alta / Media / Baja) =================
+  const css3 = document.createElement("style");
+  css3.textContent = "@media (min-width:768px){#pedidos > .paper.grid{grid-template-columns:repeat(2,minmax(0,1fr))}}";
+  document.head.appendChild(css3);
+  const filtroPrioridad = $("order-priority-filter"), campoPrioridad = $("new-priority"), etiquetaPrioridad = document.querySelector('label[for="new-priority"]');
+  if (filtroPrioridad && filtroPrioridad.parentElement) filtroPrioridad.parentElement.style.display = "none";
+  if (campoPrioridad) campoPrioridad.style.display = "none";
+  if (etiquetaPrioridad) etiquetaPrioridad.style.display = "none";
+  const _renderOrders = renderOrders;
+  renderOrders = function () {
+    _renderOrders();
+    document.querySelectorAll("#orders-list .order-card").forEach(c => { const pills = c.querySelectorAll(".pill"); if (pills[1]) pills[1].remove(); });
+  };
   // ================= Costeo de la carta (ganancia, mano de obra y margen de error) =================
   const CFG_KEY = "chefmaster_costeo";
   const cfg = (() => {

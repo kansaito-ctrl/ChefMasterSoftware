@@ -66,7 +66,6 @@ const COLS = [
   { status: "En preparación", list: "l2", n: "n2", act: { text: "Listo", next: "Listo", cls: "a-prep" } },
   { status: "Listo", list: "l3", n: "n3", act: { text: "Entregado", next: "Entregado", cls: "a-listo" } }
 ];
-const PRIO = { Alta: 0, Media: 1, Baja: 2 };
 let orders = [], seen = null;
 
 const $ = id => document.getElementById(id);
@@ -99,14 +98,13 @@ function render() {
   const ids = new Set(orders.map(o => o.id));
   COLS.forEach((col, idx) => {
     const list = orders.filter(o => o.status === col.status)
-      .sort((a, b) => (PRIO[a.priority] - PRIO[b.priority]) || (new Date(a.created_at) - new Date(b.created_at)));
+      .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
     $(col.n).textContent = list.length;
     $("c" + (idx + 1)).textContent = col.status + ": " + list.length;
     $(col.list).innerHTML = list.length ? list.map(o => `
       <article class="card ${!firstLoad && !seen.has(o.id) ? "flash" : ""}">
         <div class="top">
-          <div><div class="code">${esc(o.code)}</div><div class="mesa">${esc(o.customer)}</div>
-            <span class="badge ${o.priority === "Alta" ? "alta" : ""}">Prioridad ${esc(o.priority)}</span></div>
+          <div><div class="code">${esc(o.code)}</div><div class="mesa">${esc(o.customer)}</div></div>
           <div class="timer" data-t="${esc(o.created_at)}" data-s="${esc(o.status)}"></div>
         </div>
         <ul>${o.items.map(i => `<li>${i.image_url ? `<img class="thumb" src="${esc(i.image_url)}" alt="" onerror="this.remove()">` : ""}<span><b>${i.qty}×</b> ${esc(i.name)}</span></li>`).join("")}</ul>
