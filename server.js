@@ -262,6 +262,7 @@ app.post('/api/inventory/:id/movement', wrap(async (req, res) => {
     }
     const after = type === 'Entrada' ? ing.quantity + amount : ing.quantity - amount;
     await conn.query('UPDATE ingredients SET quantity=? WHERE id=?', [after, id]);
+    if (type === 'Entrada') await conn.query('UPDATE ingredients SET base_quantity = GREATEST(COALESCE(base_quantity, 0), ?) WHERE id=?', [after, id]);
     await conn.query(
       `INSERT INTO movements (type,ingredient_id,amount,before_qty,after_qty,reason,supplier,cost,note)
        VALUES (?,?,?,?,?,?,?,?,?)`,
@@ -275,7 +276,7 @@ app.post('/api/inventory/:id/movement', wrap(async (req, res) => {
 app.post('/api/reset', wrap(async (req, res) => {
   if (!process.env.RESET_KEY || req.body.key !== process.env.RESET_KEY)
     return res.status(403).json({ error: 'Clave incorrecta' });
-  const sql = ['seed_demo.sql', 'seed_stock_menu.sql'].filter(f => fs.existsSync(path.join(__dirname, f)))
+  const sql = ['reiniciar_datos.sql'].filter(f => fs.existsSync(path.join(__dirname, f)))
     .map(f => fs.readFileSync(path.join(__dirname, f), 'utf8')).join('\n');
   const conn = await mysql.createConnection({ ...dbConfig, multipleStatements: true });
   try { await conn.query(sql); } finally { await conn.end(); }
