@@ -13,6 +13,8 @@
   #clock{font-size:22px;font-weight:700;margin-left:auto}
   .count{padding:4px 12px;border-radius:999px;font-weight:700;font-size:14px;color:var(--ink)}
   header button{border:3px solid #fff9e9;background:transparent;color:#fff9e9;font:inherit;font-weight:700;padding:6px 14px;border-radius:9px;cursor:pointer}
+  #sonido.pulse{animation:pulso 1.2s ease-in-out infinite;border-color:var(--yellow);color:var(--yellow)}
+  @keyframes pulso{50%{background:rgba(244,200,74,.25)}}
   #error{background:#a52d22;color:#fff;padding:10px 20px;font-weight:700}
   #error[hidden]{display:none}
   .board{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;padding:16px;align-items:start}
@@ -49,6 +51,7 @@
   <span class="count" id="c2" style="background:#f09b8f"></span>
   <span class="count" id="c3" style="background:#9ad1b0"></span>
   <span id="clock"></span>
+  <button id="sonido" type="button" aria-live="polite"></button>
   <button id="salir" type="button">Salir</button>
 </header>
 <div id="error" hidden></div>
@@ -66,7 +69,7 @@ const COLS = [
   { status: "En preparación", list: "l2", n: "n2", act: { text: "Listo", next: "Listo", cls: "a-prep" } },
   { status: "Listo", list: "l3", n: "n3", act: { text: "Entregado", next: "Entregado", cls: "a-listo" } }
 ];
-let orders = [], seen = null;
+let orders = [], seen = null;   // seen: id del pedido -> cantidad de platillos que tenía
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -95,14 +98,16 @@ function minutes(o) { return (Date.now() - new Date(o.created_at).getTime()) / 6
 
 function render() {
   const firstLoad = seen === null;
-  const ids = new Set(orders.map(o => o.id));
+  const ahora = new Map(orders.map(o => [o.id, o.items.reduce((n, i) => n + i.qty, 0)]));
+  // llegó una comanda nueva, o le agregaron platillos a una que ya estaba
+  const llegadas = new Set(firstLoad ? [] : orders.filter(o => o.status !== "Entregado" && (!seen.has(o.id) || ahora.get(o.id) > seen.get(o.id))).map(o => o.id));
   COLS.forEach((col, idx) => {
     const list = orders.filter(o => o.status === col.status)
       .sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
     $(col.n).textContent = list.length;
     $("c" + (idx + 1)).textContent = col.status + ": " + list.length;
     $(col.list).innerHTML = list.length ? list.map(o => `
-      <article class="card ${!firstLoad && !seen.has(o.id) ? "flash" : ""}">
+      <article class="card ${llegadas.has(o.id) ? "flash" : ""}">
         <div class="top">
           <div><div class="code">${esc(o.code)}</div><div class="mesa">${esc(o.customer)}</div></div>
           <div class="timer" data-t="${esc(o.created_at)}" data-s="${esc(o.status)}"></div>
@@ -112,7 +117,8 @@ function render() {
         <button class="act ${col.act.cls}" data-id="${o.id}" data-next="${col.act.next}" type="button">${col.act.text}</button>
       </article>`).join("") : '<div class="empty">Sin comandas</div>';
   });
-  seen = ids;
+  seen = ahora;
+  if (llegadas.size) { timbre(); avisoPestana(llegadas.size); }
   document.querySelectorAll(".act").forEach(b => b.onclick = async () => {
     b.disabled = true;
     try { await api(`/api/orders/${b.dataset.id}/status`, { method: "PATCH", body: { status: b.dataset.next } }); await load(); }
@@ -131,6 +137,50 @@ function tick() {
   });
 }
 
+// ---------- Sonido de comanda nueva ----------
+let sonidoOn = true, ctx = null, pendientes = 0;
+try { sonidoOn = localStorage.getItem("chefmaster_sonido") !== "off"; } catch (e) {}
+const tituloBase = document.title;
+const audioListo = () => !!ctx && ctx.state === "running";
+
+function pintarSonido() {
+  const b = $("sonido");
+  b.classList.toggle("pulse", sonidoOn && !audioListo());
+  b.textContent = !sonidoOn ? "🔕 Sonido apagado" : audioListo() ? "🔔 Sonido activado" : "🔔 Toca para activar el sonido";
+}
+async function activarAudio() {   // los navegadores exigen un toque del usuario antes de dejar sonar
+  try {
+    ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx.state !== "running") await ctx.resume();
+  } catch (e) {}
+  pintarSonido();
+}
+function timbre() {   // dos "ding-ding" seguidos, como una campana de cocina
+  if (!sonidoOn || !audioListo()) return;
+  const t0 = ctx.currentTime;
+  [[0, 880], [0.22, 1320], [0.9, 880], [1.12, 1320]].forEach(([dt, hz]) => {
+    const o = ctx.createOscillator(), g = ctx.createGain();
+    o.type = "sine"; o.frequency.value = hz;
+    g.gain.setValueAtTime(0.0001, t0 + dt);
+    g.gain.exponentialRampToValueAtTime(0.4, t0 + dt + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dt + 0.6);
+    o.connect(g); g.connect(ctx.destination);
+    o.start(t0 + dt); o.stop(t0 + dt + 0.65);
+  });
+}
+function avisoPestana(n) {   // si la pestaña está oculta, el título avisa
+  if (!document.hidden) return;
+  pendientes += n; document.title = `🔔 (${pendientes}) Nueva comanda · Cocina`;
+}
+document.addEventListener("visibilitychange", () => { if (!document.hidden) { pendientes = 0; document.title = tituloBase; } });
+$("sonido").onclick = async () => {
+  if (sonidoOn && audioListo()) sonidoOn = false;
+  else { sonidoOn = true; await activarAudio(); timbre(); }   // al activarlo suena una prueba
+  try { localStorage.setItem("chefmaster_sonido", sonidoOn ? "on" : "off"); } catch (e) {}
+  pintarSonido();
+};
+["pointerdown", "keydown"].forEach(ev => document.addEventListener(ev, () => { if (sonidoOn && !audioListo()) activarAudio(); }, { once: true }));
+pintarSonido();
 $("salir").onclick = () => { sessionStorage.clear(); location.href = "/"; };
 load();
 setInterval(load, 5000);
