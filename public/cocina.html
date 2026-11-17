@@ -60,6 +60,7 @@
   <section class="col prep"><h2>En preparación <span id="n2">0</span></h2><div class="list" id="l2"></div></section>
   <section class="col listo"><h2>Listas para entregar <span id="n3">0</span></h2><div class="list" id="l3"></div></section>
 </main>
+<script src="/no.js"></script>
 <script>
 const token = sessionStorage.getItem("token");
 if (!token) location.href = "/";
@@ -122,7 +123,7 @@ function render() {
   document.querySelectorAll(".act").forEach(b => b.onclick = async () => {
     b.disabled = true;
     try { await api(`/api/orders/${b.dataset.id}/status`, { method: "PATCH", body: { status: b.dataset.next } }); await load(); }
-    catch (e) { showError(e.message); b.disabled = false; }
+    catch (e) { showError(e.message); mostrarNo(e.message); b.disabled = false; }
   });
   tick();
 }

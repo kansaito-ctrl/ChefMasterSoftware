@@ -46,7 +46,7 @@ const COCINA = [['GET', '/orders'], ['GET', '/recipes'], ['PATCH', /^\/orders\/\
 app.use('/api', (req, res, next) => {
   if (match(PUBLICAS, req)) return next();
   const role = getRole(req);
-  if (role === 'admin' || (role === 'cocina' && match(COCINA, req))) return next();
+  if (role === 'admin' || (role === 'cocina' && match(COCINA, req))) { req.role = role; return next(); }
   res.status(role ? 403 : 401).json({ error: role ? 'Sin permiso' : 'No autorizado' });
 });
 
@@ -55,12 +55,13 @@ const cleanImg = v => { v = String(v || '').trim().slice(0, 255); return /^(\/im
 app.get('/api/menu', wrap(async (_, res) => {          // público: lo que ve el cliente
   const [rows] = await pool.query(
     `SELECT r.id, r.name, r.price, r.category, r.description, r.image_url,
-            GROUP_CONCAT(i.name ORDER BY ri.qty DESC SEPARATOR ', ') AS ingredients
+            GROUP_CONCAT(i.name ORDER BY ri.qty DESC SEPARATOR ', ') AS ingredients,
+            MIN(FLOOR(i.quantity / ri.qty)) AS porciones
      FROM recipes r
      LEFT JOIN recipe_ingredients ri ON ri.recipe_id = r.id
      LEFT JOIN ingredients i ON i.id = ri.ingredient_id
      WHERE r.active = 1 GROUP BY r.id ORDER BY r.id`);
-  res.json(rows);
+  res.json(rows.map(r => ({ ...r, disponible: r.porciones === null || Number(r.porciones) >= 1 })));
 }));
 
 app.get('/api/recipes', wrap(async (_, res) => {
@@ -148,6 +149,8 @@ app.post('/api/orders', wrap(async (req, res) => {   // lo usan administración 
   const notes = String(req.body.notes || '').slice(0, 300);
   const priority = ['Alta', 'Media', 'Baja'].includes(req.body.priority) ? req.body.priority : 'Media';
   if (!customer || !items.length) return res.status(400).json({ error: 'Falta cliente o platillos' });
+  const faltan = await faltantes(pool, await needsForItems(pool, items));
+  if (faltan.length) return res.status(409).json({ error: 'Hoy no podemos preparar este pedido: nos faltan ingredientes (' + faltan.map(f => f.name).join(', ') + ')', faltantes: faltan.map(f => f.name) });
   const conn = await pool.getConnection();
   try {
     await conn.beginTransaction();
@@ -190,6 +193,15 @@ async function consume(conn, orderId, needs) {
   }
 }
 
+// --- ¿alcanza el inventario? ---
+async function faltantes(db, needs) {
+  if (!needs.length) return [];
+  const [rows] = await db.query('SELECT id, name, unit, quantity FROM ingredients WHERE id IN (?)', [needs.map(n => n.ingredient_id)]);
+  return needs.map(n => { const i = rows.find(r => r.id === n.ingredient_id); return { name: i.name, unit: i.unit, need: n.need, have: Number(i.quantity) }; })
+    .filter(x => x.have + 1e-9 < x.need);
+}
+const textoFaltantes = f => f.map(x => `${x.name} (faltan ${Number((x.need - x.have).toFixed(2))} ${x.unit})`).join(', ');
+
 // Cambiar estado (descuenta inventario UNA sola vez al pasar a "En preparación")
 app.patch('/api/orders/:id/status', wrap(async (req, res) => {
   const { status } = req.body, id = +req.params.id;
@@ -201,7 +213,12 @@ app.patch('/api/orders/:id/status', wrap(async (req, res) => {
     const [[o]] = await conn.query('SELECT * FROM orders WHERE id=? FOR UPDATE', [id]);
     if (!o) { await conn.rollback(); return res.status(404).json({ error: 'No existe' }); }
     if (status === 'En preparación' && !o.discounted) {
-      await consume(conn, id, await needsForOrder(conn, id));
+      const needs = await needsForOrder(conn, id);
+      if (!(req.role === 'admin' && req.body.force)) {      // solo administración puede continuar sin ingredientes
+        const faltan = await faltantes(conn, needs);
+        if (faltan.length) { await conn.rollback(); return res.status(409).json({ error: 'Faltan ingredientes: ' + textoFaltantes(faltan), faltantes: faltan }); }
+      }
+      await consume(conn, id, needs);
       await conn.query('UPDATE orders SET discounted=1 WHERE id=?', [id]);
     }
     await conn.query('UPDATE orders SET status=? WHERE id=?', [status, id]);
@@ -220,11 +237,16 @@ app.post('/api/orders/:id/items', wrap(async (req, res) => {
     const [[o]] = await conn.query('SELECT * FROM orders WHERE id=? AND deleted_at IS NULL FOR UPDATE', [id]);
     if (!o) { await conn.rollback(); return res.status(404).json({ error: 'No existe el pedido' }); }
     if (o.status === 'Entregado') { await conn.rollback(); return res.status(400).json({ error: 'El pedido ya fue entregado' }); }
+    const needs = o.discounted ? await needsForItems(conn, items) : null;
+    if (needs) {
+      const faltan = await faltantes(conn, needs);
+      if (faltan.length) { await conn.rollback(); return res.status(409).json({ error: 'Faltan ingredientes: ' + textoFaltantes(faltan), faltantes: faltan }); }
+    }
     for (const it of items) {
       const [x] = await conn.query(ADD_ITEM, [id, it.qty, it.name, it.qty]);
       if (!x.affectedRows) { await conn.rollback(); return res.status(400).json({ error: `No existe el platillo: ${it.name}` }); }
     }
-    if (o.discounted) await consume(conn, id, await needsForItems(conn, items));      // ya se estaba preparando
+    if (needs) await consume(conn, id, needs);      // ya se estaba preparando
     if (o.status === 'Listo') await conn.query("UPDATE orders SET status='En preparación' WHERE id=?", [id]); // reabre la comanda
     await conn.commit();
     res.json({ ok: true });

@@ -181,6 +181,7 @@
         </form>
     </main>
 
+    <script src="/no.js"></script>
     <script>
         const CLIENT_URL = "cliente.html";
         const DESTINOS = { admin: "administracion.html", cocina: "cocina.html" };
@@ -232,6 +233,7 @@
             } catch (err) {
                 loginMessage.textContent = err.message;
                 passwordInput.select();
+                if (window.mostrarNo) { mostrarNo(err.message); NoNo.sacudir(adminPanel); }
             }
         });
     </script>

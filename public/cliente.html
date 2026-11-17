@@ -33,6 +33,9 @@
   .fc-back{height:100%;display:flex;flex-direction:column;padding:16px}
   .fc-tag{align-self:flex-start;padding:2px 10px;border:2px solid var(--ink);border-radius:99px;background:var(--yellow);font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px}
   .fc-desc{flex:1;overflow:auto;margin:10px 0;line-height:1.45;font-weight:600;color:var(--muted);font-size:15px}
+  .fc-agotado{position:absolute;top:12px;left:12px;z-index:2;padding:3px 10px;background:var(--red);color:#fff9e9;border:3px solid var(--ink);border-radius:8px;font-size:13px;font-weight:900;text-transform:uppercase;letter-spacing:.05em;transform:rotate(-4deg)}
+  .agotado .fc-photo{filter:grayscale(1) contrast(.9)}
+  .agotado .qty button[data-d="1"]{opacity:.45}
   .qty{display:flex;align-items:center;gap:8px}
   .qty button{width:40px;height:40px;border:3px solid var(--ink);border-radius:10px;background:var(--yellow);color:var(--ink);font:inherit;font-size:22px;font-weight:900;cursor:pointer}
   .qty span{min-width:26px;text-align:center;font-weight:900;font-size:20px}
@@ -70,6 +73,7 @@
   </div>
 </div>
 
+<script src="/no.js"></script>
 <script src="/flipcard.js"></script>
 <script>
 const ORDEN = ["Tacos", "Guarniciones", "Entradas", "Segundo tiempo", "Plato fuerte", "Postres", "Bebidas", "Menú degustación", "Cocina turca"];
@@ -98,10 +102,11 @@ const stepper = (i, p) => `<div class="qty">
 function tarjeta(p, i) {
   const foto = p.image_url ? `<img class="fc-photo" src="${esc(p.image_url)}" alt="" loading="lazy" onerror="this.remove()">` : "";
   const cat = esc(TITULOS[p.category] || p.category);
-  return `<article class="flip-card" role="group" aria-roledescription="tarjeta que se voltea" aria-label="${esc(p.name)}">
+  const agotado = p.disponible === false;
+  return `<article class="flip-card${agotado ? " agotado" : ""}" role="group" aria-roledescription="tarjeta que se voltea" aria-label="${esc(p.name)}">
     <span class="flip-card__shadow" aria-hidden="true"></span>
     <div class="flip-card__rotor">
-      <div class="flip-card__face flip-card__face--front">${foto}
+      <div class="flip-card__face flip-card__face--front">${foto}${agotado ? '<span class="fc-agotado">Agotado hoy</span>' : ""}
         <div class="fc-info"><div class="fc-name">${esc(p.name)}</div>
           <div class="fc-row"><span class="fc-price">${money(p.price)}</span>${stepper(i, p)}</div>
           <button type="button" class="fc-link" data-flip>Ver ingredientes ↻</button></div>
@@ -131,7 +136,9 @@ function pintar() {
 }
 
 function cambiar(i, d) {
-  const p = platillos[i], q = Math.max(0, Math.min(50, (carrito[p.name] || 0) + d));
+  const p = platillos[i];
+  if (d > 0 && p.disponible === false) { mostrarNo(`Hoy no hay “${p.name}”: nos faltan ingredientes.`); return; }
+  const q = Math.max(0, Math.min(50, (carrito[p.name] || 0) + d));
   if (q) carrito[p.name] = q; else delete carrito[p.name];
   document.querySelectorAll(`[data-q="${p.id}"]`).forEach(s => { s.textContent = q; });
   actualizar();
@@ -146,7 +153,7 @@ function actualizar() {
 
 $("send").onclick = async () => {
   const mesa = $("mesa").value.trim(), msg = $("msg");
-  if (!mesa) { msg.className = "bad"; msg.textContent = "Escribe tu mesa o nombre."; $("mesa").focus(); return; }
+  if (!mesa) { msg.className = "bad"; msg.textContent = "Escribe tu mesa o nombre."; mostrarNo("Escribe tu mesa o nombre para enviar el pedido."); NoNo.sacudir($("mesa")); $("mesa").focus(); return; }
   $("send").disabled = true; msg.textContent = "";
   try {
     const r = await fetch("/api/orders", {
@@ -159,7 +166,7 @@ $("send").onclick = async () => {
     carrito = {}; $("notas").value = ""; pintar(); actualizar();
     msg.className = "ok"; msg.textContent = `¡Listo! Tu pedido ${d.code} ya está en cocina.`;
   } catch (e) {
-    msg.className = "bad"; msg.textContent = e.message; actualizar();
+    msg.className = "bad"; msg.textContent = e.message; actualizar(); mostrarNo(e.message); cargar();   // cargar(): actualiza qué platillos siguen disponibles
   }
 };
 
