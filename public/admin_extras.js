@@ -344,28 +344,4 @@
   const _renderAll2 = renderAll;
   renderAll = function () { _renderAll2(); renderCosteo(); };
   renderCosteo();
-  // ================= "¡NO!" estilo dibujo animado cuando algo no se puede hacer =================
-  if (!window.mostrarNo) { const sc = document.createElement("script"); sc.src = "/no.js"; document.head.appendChild(sc); }
-  const decirNo = m => { if (window.mostrarNo) window.mostrarNo(m); };
-  const _api = api;
-  api = async function (url, opt) {
-    try { return await _api(url, opt); }
-    catch (e) {
-      if (((opt && opt.method) || "GET") !== "GET")   // solo cuando una acción falla (no en las actualizaciones automáticas)
-        decirNo(e instanceof TypeError ? "No hay conexión con el servidor. Intenta de nuevo." : e.message);
-      throw e;
-    }
-  };
-  // administración puede iniciar la preparación aunque falten ingredientes (después de confirmar la advertencia)
-  consumeOrder = function (id) {
-    const o = orders.find(x => x.id === id);
-    act(() => api(`/api/orders/${o.dbId}/status`, { method: "PATCH", body: { status: "En preparación", force: true } }),
-        `Ingredientes descontados para ${o.id}.`);
-  };
-  // los mensajes de error que se escriben en los formularios también disparan el aviso
-  ["order-form-error", "adjust-error", "cx-error"].forEach(id => {
-    const el = $(id); if (!el) return;
-    new MutationObserver(() => { const t = el.textContent.trim(); if (t && !el.classList.contains("hidden")) decirNo(t); })
-      .observe(el, { childList: true, characterData: true, subtree: true, attributes: true, attributeFilter: ["class"] });
-  });
 })();
