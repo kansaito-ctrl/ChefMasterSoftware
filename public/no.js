@@ -7,13 +7,13 @@
   var capa, caja, titulo, texto, timer, anterior, ultimo = { m: '', t: 0 };
 
   var MANO = '<svg class="nono-mano" viewBox="0 0 200 260" aria-hidden="true"><g class="g" stroke="#111" stroke-width="6" stroke-linejoin="round" stroke-linecap="round" fill="#fff">' +
-    '<path d="M85 150 L85 56 C85 36 115 36 115 56 L115 150 Z"/>' +
-    '<path d="M62 236 C46 206 44 168 64 150 C76 138 124 138 136 150 C156 168 154 206 138 236 Z"/>' +
-    '<path d="M64 176 C42 160 26 178 36 194 C46 208 66 206 76 198"/>' +
-    '<path d="M118 158 C134 154 144 164 140 174 M118 180 C132 178 142 188 138 198 M118 202 C130 202 136 210 133 218" fill="none"/>' +
-    '<path d="M86 180 v16 M99 178 v18" stroke-width="5" fill="none"/>' +
-    '<rect x="56" y="228" width="88" height="26" rx="9"/><path d="M97 62 v26" stroke-width="4" fill="none"/></g>' +
-    '<g stroke="#111" stroke-width="5" stroke-linecap="round" fill="none" class="aire"><path d="M30 60 q-12 22 0 44"/><path d="M170 60 q12 22 0 44"/></g></svg>';
+    '<path d="M52 168 C48 120 56 78 70 52 C78 38 96 42 94 60 C92 86 88 124 92 168 Z"/><path d="M60 104 q14 -4 28 0" fill="none" stroke-width="4"/>' +
+    '<path d="M44 232 C34 206 40 176 58 164 L142 164 C164 178 166 208 154 232 Z"/>' +
+    '<path d="M40 210 C34 190 52 176 78 178 C98 180 106 192 96 202 C84 210 66 210 56 222 C48 228 42 220 40 210 Z"/>' +
+    '<path d="M92 170 C90 148 112 144 114 164 C116 178 94 184 92 170 Z"/><path d="M114 168 C114 148 136 146 138 168 C140 180 116 184 114 168 Z"/>' +
+    '<path d="M138 174 C138 156 158 158 160 176 C160 188 140 190 138 174 Z"/>' +
+    '<path d="M52 232 L148 232 L156 256 L44 256 Z"/><path d="M60 244 H140" stroke-width="3" fill="none"/></g>' +
+    '<g stroke="#111" stroke-width="5" stroke-linecap="round" fill="none" class="aire"><path d="M38 66 q-14 22 -2 48"/><path d="M124 66 q14 22 4 48"/></g></svg>';
 
   var GRANO = "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>\")";
   var CSS = '.nono-capa{position:fixed;inset:0;z-index:9999;display:none;align-items:center;justify-content:center;padding:16px;background:rgba(20,16,12,.62)}' +
@@ -22,13 +22,13 @@
     '.nono-caja::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 55%,rgba(120,80,30,.38) 100%)}' +
     '.nono-grano{position:absolute;inset:-24px;pointer-events:none;opacity:.16;background-image:' + GRANO + ';animation:nono-grano .3s steps(3) infinite}' +
     '.nono-mano{position:relative;width:150px;height:auto;display:block;margin:0 auto;overflow:visible}' +
-    '.nono-mano .g{transform-origin:100px 244px;animation:nono-wag .55s steps(6,end) infinite}' +
+    '.nono-mano .g{transform-origin:100px 250px;animation:nono-wag .55s steps(6,end) infinite}' +
     '.nono-mano .aire{animation:nono-aire .55s steps(2,end) infinite}' +
     '.nono-no{position:relative;font-family:Impact,"Arial Black",sans-serif;font-size:56px;line-height:1;letter-spacing:2px;color:#d8412f;-webkit-text-stroke:3px #111;paint-order:stroke fill;margin:4px 0;transform:rotate(-4deg);animation:nono-rebote .55s steps(4) infinite}' +
     '.nono-msg{position:relative;margin:8px 4px 0;font-family:Georgia,serif;font-weight:900;font-size:19px;line-height:1.3;color:#111}' +
     '.nono-sub{position:relative;margin:10px 0 0;font:700 11px "Trebuchet MS",Arial,sans-serif;color:#62584c;letter-spacing:.08em;text-transform:uppercase}' +
     '@keyframes nono-pop{0%{transform:scale(.5) rotate(-6deg)}60%{transform:scale(1.08) rotate(2deg)}100%{transform:scale(1) rotate(0)}}' +
-    '@keyframes nono-wag{0%{transform:rotate(-22deg)}50%{transform:rotate(22deg)}100%{transform:rotate(-22deg)}}' +
+    '@keyframes nono-wag{0%{transform:rotate(-20deg)}50%{transform:rotate(20deg)}100%{transform:rotate(-20deg)}}' +
     '@keyframes nono-aire{0%{opacity:0}50%{opacity:1}100%{opacity:0}}' +
     '@keyframes nono-rebote{0%,100%{transform:rotate(-4deg) scale(1)}50%{transform:rotate(-4deg) scale(1.1,.92)}}' +
     '@keyframes nono-grano{0%{transform:translate(0,0)}33%{transform:translate(-8px,6px)}66%{transform:translate(6px,-8px)}100%{transform:translate(0,0)}}' +
